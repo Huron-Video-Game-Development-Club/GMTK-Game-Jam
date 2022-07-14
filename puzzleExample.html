@@ -6,19 +6,28 @@
 <body>
 
     <script>
+    var width = window.innerWidth
+    || document.documentElement.clientWidth
+    || document.body.clientWidth;
+
+    var height = window.innerHeight
+    || document.documentElement.clientHeight
+    || document.body.clientHeight;    
+        
     var config = {
         type: Phaser.AUTO,
-        width: 800,
-        height: 600,
+        width: width,
+        height: height,
         physics: {
             default: 'arcade',
             arcade: {
-                gravity: { y: 200 }
+                gravity: { y: -200 }
             }
         },
         scene: {
             preload: preload,
-            create: create
+            create: create,
+            update: update
         }
     };
 
@@ -26,32 +35,75 @@
 
     function preload ()
     {
+        
+        this.load.image('logo', 'https://upload.wikimedia.org/wikipedia/en/b/bd/Metallica_-_...And_Justice_for_All_cover.jpg');
+        
+        
         this.load.setBaseURL('http://labs.phaser.io');
-
-        this.load.image('sky', 'assets/skies/space3.png');
-        this.load.image('logo', 'assets/sprites/phaser3-logo.png');
         this.load.image('red', 'assets/particles/red.png');
+        
+        this.load.image('sky', 'assets/skies/space3.png');        
     }
 
+    var cursors;
+    var logo;
+        
     function create ()
     {
-        this.add.image(400, 300, 'sky');
+        cursors = this.input.keyboard.createCursorKeys();
+        
+        //this.add.image(400, 800, 'sky');
 
         var particles = this.add.particles('red');
 
         var emitter = particles.createEmitter({
-            speed: 500,
+            speed: 50,
             scale: { start: 1, end: 0 },
             blendMode: 'ADD'
         });
+        
+        emitter.setScale(0.5);
+        emitter.setLifespan(200);
 
-        var logo = this.physics.add.image(400, 100, 'logo');
+        logo = this.physics.add.image(50, 50, 'logo');
 
         logo.setVelocity(100, 200);
         logo.setBounce(1, 1);
         logo.setCollideWorldBounds(true);
+        //logo.setGravityY(500);
+        logo.setSize(25, 25);
+        logo.setDisplaySize(25, 25);
+
 
         emitter.startFollow(logo);
+    }
+        
+    function update ()
+    {
+        console.log("update");
+
+        if (cursors.left.isDown)
+        {
+            console.log ("left down");
+            logo.setGravityX(-500);
+            logo.setGravityY(0);
+        }
+        else if (cursors.right.isDown)
+        {
+            logo.setGravityX(500);
+            logo.setGravityY(0);
+        }
+
+        else if (cursors.up.isDown)
+        {
+            logo.setGravityX(0);
+            logo.setGravityY(-500);
+        }
+        else if (cursors.down.isDown)
+        {
+            logo.setGravityX(0);
+            logo.setGravityY(500);
+        }
     }
     </script>
 
