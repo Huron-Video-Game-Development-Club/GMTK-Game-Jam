@@ -2,7 +2,6 @@
 <html>
 <head>
     <script src="//cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
-    <img src="/rock.png"/>
 </head>
 <body>
 
@@ -37,14 +36,28 @@
 
     var game = new Phaser.Game(config);
 
+    function loadSheet(game, name, dataURI, width, height){
+        console.log("NEW");
+        var img = new Image();
+        img.onload = function(){
+            game.textures.addSpriteSheet(name, img, {frameWidth: width, frameHeight: height});
+        }
+        img.src = dataURI;
+    }
 
     function preload(){
         
-        this.load.spritesheet('idle', '/bryangle_idle.png', {frameWidth: 24, frameHeight: 24});
-        
-        this.load.spritesheet('run', '/bryangle_run.png', {frameWidth: 24, frameHeight: 24}); 
+        let uri1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAYCAYAAAC8/X7cAAAAAXNSR0IArs4c6QAAARxJREFUWEftl8sNAjEMRHePNMKZUiiAPqiBPiiAUjjTCEdQkCKZ7Nozjs1nBVxxZvIyJDbjsPDPuPD9D18JcNrsbuVgt+cj3B8smEvIY+BNuGrXdQjCDeA18AC02gyEC6DH4GcAtMNBKdAJ9BowCSBtC4ICiBggAFZbe5UgQNTAAvBoaymYABkGGoDU3l8vj7LDao0Cm/QGFSDLwOoj9bsWAAHJ3jAL0J58xKAFYFINAWQb9ADA35EYMyYJMAAeA1mbpS1fpCeAVxj8AZS460V+awJlL9GU2+k0/Q6g8bceqBzJ56CqDhrdYR8oQhED1MgQcAoAMw6gjWjPKVrXBSBP3DJg66xeENWHd0Az6P1nxq5j6+A0yjStT9bcAc3f6Bk+Ifp6AAAAAElFTkSuQmCC";
+        loadSheet(this, 'idle', uri1, 24, 24);
 
-        this.load.image("rock", "/rock.png");
+        let uri2 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAAAYCAYAAAAF6fiUAAAAAXNSR0IArs4c6QAAAb5JREFUaEPtmMFVxDAMRNkjjeyZUiiAPqhh+6AASuFMIxzhhff8njGRZsaSdhMIR+wdjefLiZ3T3fF30wRON61uFH99ePpchh7fXjbpD2Wm+J9aoFIAmR3Hm3b7fwWELfmXAVQGNGpXQNiafwlAdUD/UX8zAKzwM3dBJeBZ/zSA2QLMOwBpZ0BANSLvGqTt+acARAogAKx25FTE1piBwGpb/iGAaAEPgKI9uwuUGioARdvy7wLIKGAB6LWfP96/p13uz2jDSHeDPfg3AVQGNAYzAkBAmE7di/9VAJUBMV0ZBbAn/78AVAfE6MPnkPOZgtGPAGb0Ff9TAJQC/dws896JKKvG2mMuS7v3/wNARYFrAtij/wOAsZ3/5A5Y1hrtUu8EFNXuWVh1ojVG3fR3gHpEXOavLarpeGNrzZsdELrHeP57L1Yu8B7ABsQE3xbTjLG/GUNlftfXYAAzmt77zHtkedrUTRhtR8U80xVM1zEnMQQajSufUcYM2HVeFcBMJ48hLBoscBQwGp+FrKwTPoKsMzdLmFlExRzkD40rnpSmGHWpTxHe9vIuRcoiMueiDkTjmV6QFvwcjQSO8VgCX5sy1ChabDngAAAAAElFTkSuQmCC";
+        loadSheet(this, 'run', uri2, 24, 24);
+        
+        this.load.spritesheet('idle', 'idle', {frameWidth: 24, frameHeight: 24}); 
+
+        //this.load.image("rock", "/rock.png");
+        let uri3 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAHFJREFUSEtjrKvr/89AQ8AIsqCpqZCRFnaAzKafBehBRQ1fofhg0FlAjIMo8gHJFpCaiga3BYQyH7EpDGc+GLUAlmCoFkTIQYocP6MWEMybVC2useVs+luAKzVgCwt0tUT5YFBbgMuX9KmTCaY3ChQAAE8nCRgzzg/uAAAAAElFTkSuQmCC";
+        this.textures.addBase64("rock", uri3);
 
         
     }
