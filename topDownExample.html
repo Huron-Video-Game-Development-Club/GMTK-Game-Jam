@@ -82,6 +82,7 @@
     var runAnim;
     var platforms;
     var dice;
+    var interactable = true;
 
     function getForceVector(p1, p2, magnitude){
         let d = Math.sqrt((p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y));
@@ -89,8 +90,8 @@
     }
         
 
-    const FRICTION = 0;
-    const BOUNCE = 1;
+    const FRICTION = 0.005;
+    const BOUNCE = 0.9;
     const FORCE = 10;
 
 
@@ -145,20 +146,24 @@
        dice.setCollideWorldBounds(true);
        dice.setBounce(1, 1);
 */
-       var dice2 = this.matter.add.sprite(400, 400, "dice");
-       dice2.setRotation(Math.PI/4);
-       dice2.setMass(100000);
-       dice2.setFriction(0);
-       dice2.setFrictionAir(FRICTION);
-       dice2.setBounce(BOUNCE);
+       dice = this.matter.add.sprite(400, 400, "dice");
+       dice.setRotation(Math.PI/4);
+       dice.setMass(100000);
+       dice.setFriction(0);
+       dice.setFrictionAir(FRICTION);
+       dice.setBounce(BOUNCE);
+       dice.tintFill = true;
+       dice.clearTint();
 
-       dice2.setOnCollideActive((data)=>{
-            if (keys.space.isDown){
-                var newVelocity = getForceVector(player.body.position, dice2.body.position, FORCE);
+       dice.setOnCollideActive((data)=>{
+            if (keys.space.isDown && interactable){
+                var newVelocity = getForceVector(player.body.position, dice.body.position, FORCE);
                 console.log(newVelocity);
-                dice2.setVelocity(newVelocity.x, newVelocity.y);
+                dice.setVelocity(newVelocity.x, newVelocity.y);
                 console.log("DID IT");
-                dice2.setAngularVelocity(0.2);
+                dice.setAngularVelocity(0.2);
+                dice.setTintFill(0xECA72C);
+                interactable = false;
             }
        });
 
@@ -215,6 +220,18 @@
         }
        // player.play("run");
        
+       let speed = Math.sqrt(Math.pow(dice.body.velocity.x, 2) + Math.pow(dice.body.velocity.y, 2))
+       
+       //max speed of 10
+       if (speed > 10){
+        dice.setVelocityX((dice.body.velocity.x/speed) * 10);
+        dice.setVelocityY((dice.body.velocity.y/speed) * 10);
+       }
+
+       if (speed < 1.5){
+        dice.clearTint();
+        interactable = true;
+       }
        
     }
     </script>
