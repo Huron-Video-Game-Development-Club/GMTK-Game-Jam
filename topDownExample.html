@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.15.1/dist/phaser-arcade-physics.min.js"></script>
+</head>
+<body>
+
+    <script>
+    var width = 500;
+
+    var height = 500;
+        
+    var config = {
+        type: Phaser.AUTO,
+        width: width,
+        height: height,
+        pixelArt: true,
+        physics: {
+            default: 'arcade',
+            arcade: {
+                gravity: { y: 0 }
+            }
+        },
+        scene: {
+            preload: preload,
+            create: create,
+            update: update
+        }
+    };
+
+    var game = new Phaser.Game(config);
+
+
+    function preload(){
+        
+        this.load.spritesheet('idle', '/bryangle_idle.png', {frameWidth: 24, frameHeight: 24});
+        
+        this.load.spritesheet('run', '/bryangle_run.png', {frameWidth: 24, frameHeight: 24}); 
+
+        this.load.image("rock", "/rock.png");
+
+        
+    }
+
+    var player;
+    var keys;
+    var idleAnim;
+    var runAnim;
+    var rocks;
+        
+    function create(){
+        keys = this.input.keyboard.createCursorKeys();
+        idleAnim = this.anims.create({
+            key: 'idle',
+            frames: this.anims.generateFrameNumbers('idle', {start: 0, end: 3}),
+            frameRate: 4,
+            repeat: -1
+        });
+
+        runAnim = this.anims.create({
+            key: 'run',
+            frames: this.anims.generateFrameNumbers('run', {start: 0, end: 3}),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        
+        player = this.physics.add.sprite(100, 100, 'run');
+        player.setScale(2);
+        player.setCollideWorldBounds(true);
+        rocks = this.physics.add.sprite(300, 300, 'rock')
+        rocks.setCollideWorldBounds(true);
+        rocks.setScale(2);
+    
+        //rocks.createsetScale(2).refreshBody();
+        player.isMoving = {x: false, y: false};
+       // player.play("run");
+       
+       this.physics.add.collider(player, rocks);
+
+
+    }
+
+    const SPEED = 100;
+
+    function update(){
+        if (keys.left.isDown){
+            player.setVelocityX(-SPEED);
+            player.setScale(2);
+            player.isMoving.x = true;
+        }
+        else if (keys.right.isDown){
+            player.setVelocityX(SPEED);
+            player.setScale(-2, 2);
+            player.isMoving.x = true;
+        }
+        else{
+            player.isMoving.x = false;
+        }
+
+        if (keys.up.isDown){
+            player.setVelocityY(-SPEED);
+            player.isMoving.y = true;
+        }
+        else if (keys.down.isDown){
+            player.setVelocityY(SPEED);
+            player.isMoving.y = true;
+        }
+        else{
+            player.isMoving.y = false;
+        }
+
+        if (!player.isMoving.x && !player.isMoving.y){
+            player.play('idle', true);
+            player.setVelocityX(0);
+            player.setVelocityY(0);
+        }
+        else{
+            player.play("run", true);
+        }
+       // player.play("run");
+       
+    }
+    </script>
+
+</body>
+</html>
