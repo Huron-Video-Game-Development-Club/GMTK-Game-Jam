@@ -157,6 +157,10 @@
         return (data.bodyA.name == sprite.body.name || data.bodyB.name == sprite.body.name);
     }
 
+    function wasInvolvedShape(shape, data){
+        return (data.bodyA.name == shape.name || data.bodyB.name ==  shape.name);
+    }
+
     //updates the kick and enemy counts and the UI based on the values given
     function updateKickAndEnemyCounts(newKicks, newEnemies){
         enemyCount = newEnemies;
@@ -203,6 +207,16 @@
         }, delay);
     }
 
+    function getRandomUnitVector(){
+        let x = Math.random();
+        let y = Math.sqrt(1 - x * x);
+        return {x: x, y: y};
+    }
+
+    function getSpeed(sprite){
+        return Math.sqrt(sprite.body.velocity.x * sprite.body.velocity.x + sprite.body.velocity.y * sprite.body.velocity.y);
+    }
+
     //creates a new dave enemy and appends it to daves
     function createDave(game, x, y){
         dave = game.matter.add.sprite(250, 250, "dave_idle");
@@ -237,6 +251,9 @@
             }
             else if (wasInvolved(dice, data)){
                 daves[dave.index] = 0;
+                let base = getForceVector(dice.body.position, dave.body.position, 1);
+                dice.setVelocity(-base.x * getSpeed(dice), -base.y * getSpeed(dice));
+                dice.activate();
                 dave.destroy();
                 updateKickAndEnemyCounts(kickCount, enemyCount - 1);
             }
@@ -317,7 +334,7 @@
         dice.clearTint();
         dice.body.name = "dice";
         dice.detector = this.matter.add.sprite(400, 400, "dice");
-       // dice.detector.setRotation(Math.PI/4);
+        dice.detector.name = "detector";
         dice.detector.setScale(2.5);
         dice.detector.visible = false;
         dice.detector.setSensor(true);
@@ -352,6 +369,30 @@
                 updateKickAndEnemyCounts(kickCount - 1, enemyCount);
                 
             }
+        });
+
+        var self = this;
+        dice.activate = function(){
+            let num = Math.floor(Math.random() * 6) + 1;
+            var text = self.add.text(dice.body.position.x, dice.body.position.y, num);
+            setTimeout(function(){
+                text.destroy();
+            }, 2000);
+        }
+        dice.setOnCollideWith(rightEdge, (data)=>{
+            dice.activate();
+        });
+
+        dice.setOnCollideWith(leftEdge, (data)=>{
+            dice.activate();
+        });
+
+        dice.setOnCollideWith(upEdge, (data)=>{
+            dice.activate();
+        });
+
+        dice.setOnCollideWith(downEdge, (data)=>{
+            dice.activate();
         });
 
 
@@ -434,7 +475,6 @@
         }
 
         var newArrowPos = getForceVector(player.body.position, dice.body.position, 50);
-        console.log(newArrowPos);
         arrow.setPosition(player.body.position.x + newArrowPos.x, player.body.position.y + newArrowPos.y);
         let offset = -Math.PI/2;
         if (dice.body.position.x > player.body.position.x){
