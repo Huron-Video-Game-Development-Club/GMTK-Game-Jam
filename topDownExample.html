@@ -48,6 +48,26 @@
 
     var game = new Phaser.Game(config);
 
+    //game constants
+    //Experiment with these!
+    const FRICTION = 0.005; //0-1 where 0 is no friction
+    const BOUNCE = 0.9; //0-1 where 1 means 100% of kinetic energy is retained on bounce by dice
+    const FORCE = 10; //Initial force of dice kick
+    const SPEED = 3; //Player speed
+
+    //global variables for game objects
+    var player;
+    var keys;
+    var idleAnim;
+    var runAnim;
+    var platforms;
+    var dice;
+    var dave;
+
+
+    var isAlive = true;
+
+    //helper method to load a spritesheet from Data URI
     function loadSheet(game, name, dataURI, width, height){
         console.log("NEW");
         var img = new Image();
@@ -56,6 +76,18 @@
         }
         img.src = dataURI;
     }
+
+    //gets the normalized vector from p1 to p2 times given magnitude
+    function getForceVector(p1, p2, magnitude){
+        let d = Math.sqrt((p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y));
+        return {x: ((p2.x - p1.x)/d) * magnitude, y: ((p2.y - p1.y)/d) * magnitude};
+    }
+
+    //returns true or false as to whether a given matter sprite was involved in the collision data
+    function wasInvolved(sprite, data){
+        return (data.bodyA.name == sprite.body.name || data.bodyB.name == sprite.body.name);
+    }
+        
 
     function preload(){
         
@@ -73,26 +105,9 @@
 
         this.load.image("dice", "/blue.png");
 
+        this.load.spritesheet("dave_idle", "/dave.png", {frameWidth: 24, frameHeight: 24});
         
     }
-
-    var player;
-    var keys;
-    var idleAnim;
-    var runAnim;
-    var platforms;
-    var dice;
-    var interactable = true;
-
-    function getForceVector(p1, p2, magnitude){
-        let d = Math.sqrt((p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y));
-        return {x: ((p2.x - p1.x)/d) * magnitude, y: ((p2.y - p1.y)/d) * magnitude};
-    }
-        
-
-    const FRICTION = 0.005;
-    const BOUNCE = 0.9;
-    const FORCE = 10;
 
 
     function create(){
@@ -111,52 +126,48 @@
             repeat: -1
         });
 
+        daveIdle = this.anims.create({
+            key: 'dave_idle',
+            frames: this.anims.generateFrameNumbers('dave_idle', {start: 0, end: 3}),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        dave = this.matter.add.sprite(250, 250, "dave_idle");
+        dave.setScale(2);
+        dave.setStatic(true);
+        dave.setSensor(true);
+        dave.play("dave_idle");
+        dave.body.name = "dave";
+
 
         player = this.matter.add.sprite(100, 100, 'run');
         player.setScale(2);
         player.isMoving = {x: false, y: false};
         player.setFixedRotation();
         player.setMass(1);
-        player.name = "player";
-        
-        
-     //   player.setCollideWorldBounds(true);
-       /* platforms = this.physics.add.staticGroup();
+        player.body.name = "player";
 
-        //  Here we create the ground.
-        //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
-        platforms.create(400, 568, 'rock').refreshBody();
+        dice = this.matter.add.sprite(400, 400, "dice");
+        dice.setRotation(Math.PI/4);
+        dice.setMass(100000);
+        dice.setFriction(0);
+        dice.setFrictionAir(FRICTION);
+        dice.setBounce(BOUNCE);
+        dice.tintFill = true;
+        dice.clearTint();
+        dice.body.name = "dice";
 
-        //  Now let's create some ledges
-        platforms.create(600, 400, 'rock');
-        platforms.create(50, 250, 'rock');
-    
-        player.isMoving = {x: false, y: false};
-        player.setMass(1);
-       // player.play("run");
+        //create edges of playing area
+        var rightEdge = this.matter.add.rectangle(800, 0, 100, 1600, {isStatic: true});
+        var leftEdge = this.matter.add.rectangle(0, 0, 100, 1600, {isStatic: true});
+        var upEdge = this.matter.add.rectangle(0, 0, 2000, 100, {isStatic: true});
+        var downEdge = this.matter.add.rectangle(0, 800, 2000, 100, {isStatic: true});
 
-       dice = this.physics.add.sprite(400, 400, "dice");
-       dice.setScale(2);
 
-        dice.setDrag(10);
-       dice.setMass(1);
-       //dice.setImmovable(true);
-       dice.setAngularVelocity(30);
-       dice.setFriction(1, 1);
-       dice.setCollideWorldBounds(true);
-       dice.setBounce(1, 1);
-*/
-       dice = this.matter.add.sprite(400, 400, "dice");
-       dice.setRotation(Math.PI/4);
-       dice.setMass(100000);
-       dice.setFriction(0);
-       dice.setFrictionAir(FRICTION);
-       dice.setBounce(BOUNCE);
-       dice.tintFill = true;
-       dice.clearTint();
-
-       dice.setOnCollideActive((data)=>{
-            if (keys.space.isDown && interactable){
+        //collision events
+        dice.setOnCollideActive((data)=>{
+            if (keys.space.isDown && interactable && wasInvolved(player, data)){
                 var newVelocity = getForceVector(player.body.position, dice.body.position, FORCE);
                 console.log(newVelocity);
                 dice.setVelocity(newVelocity.x, newVelocity.y);
@@ -165,73 +176,75 @@
                 dice.setTintFill(0xECA72C);
                 interactable = false;
             }
-       });
+        });
 
-       var rightEdge = this.matter.add.rectangle(800, 0, 100, 1600, {isStatic: true});
-       var leftEdge = this.matter.add.rectangle(0, 0, 100, 1600, {isStatic: true});
-       var upEdge = this.matter.add.rectangle(0, 0, 2000, 100, {isStatic: true});
-       var downEdge = this.matter.add.rectangle(0, 800, 2000, 100, {isStatic: true});
-      // this.physics.add.collider(player, dice);
-      // this.physics.add.collider(player, platforms);
-      
-
-
+        dave.setOnCollideActive((data)=>{
+            console.log("collision");
+            if (wasInvolved(player, data)){
+                player.destroy();
+                isAlive = false;
+            }
+            else if (wasInvolved(dice, data)){
+                dave.destroy();
+            }
+        });
 
     }
 
-    const SPEED = 3;
-
     function update(){
-        if (keys.left.isDown){
-            player.setVelocityX(-SPEED);
-            player.setFlipX(false);
-            player.isMoving.x = true;
-        }
-        else if (keys.right.isDown){
-            player.setVelocityX(SPEED);
-            player.setFlipX(true);
-            player.isMoving.x = true;
-        }
-        else{
-            player.isMoving.x = false;
-            player.setVelocityX(0);
-        }
+        if (isAlive){
+            if (keys.left.isDown){
+                player.setVelocityX(-SPEED);
+                player.setFlipX(false);
+                player.isMoving.x = true;
+            }
+            else if (keys.right.isDown){
+                player.setVelocityX(SPEED);
+                player.setFlipX(true);
+                player.isMoving.x = true;
+            }
+            else{
+                player.isMoving.x = false;
+                player.setVelocityX(0);
+            }
 
-        if (keys.up.isDown){
-            player.setVelocityY(-SPEED);
-            player.isMoving.y = true;
-        }
-        else if (keys.down.isDown){
-            player.setVelocityY(SPEED);
-            player.isMoving.y = true;
-        }
-        else{
-            player.isMoving.y = false;
-            player.setVelocityY(0);
-        }
+            if (keys.up.isDown){
+                player.setVelocityY(-SPEED);
+                player.isMoving.y = true;
+            }
+            else if (keys.down.isDown){
+                player.setVelocityY(SPEED);
+                player.isMoving.y = true;
+            }
+            else{
+                player.isMoving.y = false;
+                player.setVelocityY(0);
+            }
 
-        if (!player.isMoving.x && !player.isMoving.y){
-            player.play('idle', true);
-            player.setVelocityX(0);
-            player.setVelocityY(0);
-        }
-        else{
-            player.play("run", true);
-        }
-       // player.play("run");
-       
-       let speed = Math.sqrt(Math.pow(dice.body.velocity.x, 2) + Math.pow(dice.body.velocity.y, 2))
-       
-       //max speed of 10
-       if (speed > 10){
-        dice.setVelocityX((dice.body.velocity.x/speed) * 10);
-        dice.setVelocityY((dice.body.velocity.y/speed) * 10);
-       }
+            if (!player.isMoving.x && !player.isMoving.y){
+                player.play('idle', true);
+                player.setVelocityX(0);
+                player.setVelocityY(0);
+            }
+            else{
+                player.play("run", true);
+            }
+        // player.play("run");
+        
+            let speed = Math.sqrt(Math.pow(dice.body.velocity.x, 2) + Math.pow(dice.body.velocity.y, 2))
+            
+            //max speed of 10
+            if (speed > 10){
+                dice.setVelocityX((dice.body.velocity.x/speed) * 10);
+                dice.setVelocityY((dice.body.velocity.y/speed) * 10);
+            }
 
-       if (speed < 1.5){
-        dice.clearTint();
-        interactable = true;
-       }
+            if (speed < 1.5){
+                dice.clearTint();
+                interactable = true;
+            } 
+        }
+        
        
     }
     </script>
