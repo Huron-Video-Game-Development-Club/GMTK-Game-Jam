@@ -25,7 +25,7 @@
         }
     </style>
 </head>
-<body>
+<body style="padding: 0px; margin: 0px;">
     <div id="overlay"></div>
     <script>
     var width = 800;
@@ -246,7 +246,7 @@
         dave.setOnCollideActive((data)=>{
             console.log("collision");
             if (wasInvolved(player, data)){
-                player.destroy();
+                player.visible = false;
                 isAlive = false;
             }
             else if (wasInvolved(dice, data)){
@@ -380,19 +380,27 @@
             }, 2000);
         }
         dice.setOnCollideWith(rightEdge, (data)=>{
-            dice.activate();
+            if (!interactable){
+                dice.activate();
+            }
         });
 
         dice.setOnCollideWith(leftEdge, (data)=>{
-            dice.activate();
+            if (!interactable){
+                dice.activate();
+            }
         });
 
         dice.setOnCollideWith(upEdge, (data)=>{
-            dice.activate();
+            if (!interactable){
+                dice.activate();
+            }
         });
 
         dice.setOnCollideWith(downEdge, (data)=>{
-            dice.activate();
+            if (!interactable){
+                dice.activate();
+            }
         });
 
 
