@@ -291,11 +291,12 @@
         var explosionScale = 1;
         dice.setVelocity(dice.body.velocity.x * 4, dice.body.velocity.y * 4);
         dice.fiery = true;
-        setInterval(function(){
+        var explodeAnim = setInterval(function(){
             explosionScale += 0.04;
             explosion.setScale(explosionScale)
         }, 20);
         setTimeout(function(){
+            clearInterval(explodeAnim);
             explosion.destroy();
         }, 1000);
         explosion.setOnCollideActive((data)=>{
