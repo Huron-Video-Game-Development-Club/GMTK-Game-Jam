@@ -5,6 +5,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cabin&family=Roboto:wght@500&display=swap" rel="stylesheet">
     <script src="//cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+   
     <style>
         *{
             font-family: "Roboto", sans-serif;
@@ -130,6 +131,7 @@
     var stageCompleted = false;
     var enemyCount = 1;
     var kickCount = 2;
+    var arrow;
 
 
     var isAlive = true;
@@ -192,13 +194,13 @@
     }
 
     //transitions to given stage
-    function stageTransition(name, game=null){
+    function stageTransition(name, game=null, delay=1500){
         stageCompleted = true;
         window.setTimeout(function(){
             stage = name;
             stageCompleted = false;
             loadStage(name, game);
-        }, 1500);
+        }, delay);
     }
 
     //creates a new dave enemy and appends it to daves
@@ -262,6 +264,9 @@
         //this.load.spritesheet("dave_idle", "/dave.png", {frameWidth: 24, frameHeight: 24});
         let uri5 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAAAYCAYAAAAF6fiUAAAAAXNSR0IArs4c6QAAAcxJREFUaEPtmeGNwzAIhdOJboNuk6myTTe4iVr5JFeci+GBwc6d0l+VXD3w9wDXyW27PksJ3JZGTwz+eHw/Ufn7/WsZh2WBUTjW31nAt9orjGAN8GzCknyWvkfXY4InTo/PLwM8wpYN/AX9sp8erIz83wZEiFczuA1k65fYUTFm5p9iAFdFUXB6JkfqZxtA+VwGMKf8dAMiq4er0Gx9afzs+/5GfBzHB+66TtdaAzLz/+mAzAAz9P+1AWgFFQi9KpIMjtDXTOaqvLZCWWs7w9IBo/mrHTAaAIXTGkgB1e+zxsSpDCib1yqIg0c3oY24UX3NZOtt2mLAKB+1A6zJrzqEkXOgHTU9460GeBjVGFMM0Cq0B0LqDPS2SkdoD5R2BmTmD90DogBxowgBpI04CraNgegjBvRMQPSl/NVnQaMBJDh0fmptjELiQGl7kA737PynGuCtIgv8CgztNqs2qkuNk2J8PI6ODsBVdu9fEVep3O0VffSt/fvickO0I/M3vQ84A6ACDYEkdUJv3Fl0tYNZGqk0jvhGzFNBmYCs2hYTrPAt2tSMNo76StJqgmcjaAyPtna4R6yP5K8aYGm1swKKgJylARmQFfzS3bYX7jPIKJDp3YMAAAAASUVORK5CYII="
         loadSheet(this, 'dave_idle', uri5, 24, 24);
+
+        let uri6 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAADFJREFUKFNjZCAAGJHlNxjE/AfxAy4sgYvDGTBJmAaYIrACdElkRYy4JGGKqKCAkDcB/2USujWLhUMAAAAASUVORK5CYII="
+        this.textures.addBase64("arrow", uri6);
     }
 
 
@@ -298,6 +303,10 @@
         player.setMass(1);
         player.body.name = "player";
 
+        arrow = this.matter.add.sprite(400, 550, 'arrow');
+        arrow.setScale(2);
+        arrow.setSensor(true);
+
         dice = this.matter.add.sprite(400, 400, "dice");
         dice.setRotation(Math.PI/4);
         dice.setMass(100000);
@@ -315,14 +324,20 @@
 
         //create edges of playing area
         var rightEdge = this.matter.add.rectangle(800, 0, 100, 1600, {isStatic: true});
+        rightEdge.name = "rightWall";
         var leftEdge = this.matter.add.rectangle(0, 0, 100, 1600, {isStatic: true});
+        leftEdge.name = "leftWall";
         var upEdge = this.matter.add.rectangle(0, 0, 2000, 100, {isStatic: true});
+        upEdge.name = "upWall";
         var downEdge = this.matter.add.rectangle(0, 800, 2000, 100, {isStatic: true});
+        downEdge.name = "downWall";
 
 
         //collision events
+
+        //player kick
         dice.detector.setOnCollideActive((data)=>{
-            if (keys.space.isDown && interactable && wasInvolved(player, data)){
+            if (keys.space.isDown && interactable && wasInvolved(player, data) && kickCount > 0){
                 var newVelocity = getForceVector(player.body.position, dice.body.position, FORCE);
                 console.log(newVelocity);
                 dice.setVelocity(newVelocity.x, newVelocity.y);
@@ -338,6 +353,7 @@
                 
             }
         });
+
 
     }
 
@@ -381,7 +397,7 @@
             else{
                 player.play("run", true);
                 if (stage == "tutorialPt1" && !stageCompleted){
-                    stageTransition("tutorialPt2", this);
+                    stageTransition("tutorialPt2", this, 500);
                 }
             }
 
@@ -417,6 +433,14 @@
             }
         }
 
+        var newArrowPos = getForceVector(player.body.position, dice.body.position, 50);
+        console.log(newArrowPos);
+        arrow.setPosition(player.body.position.x + newArrowPos.x, player.body.position.y + newArrowPos.y);
+        let offset = -Math.PI/2;
+        if (dice.body.position.x > player.body.position.x){
+            offset = Math.PI/2
+        }
+        arrow.setRotation(Math.atan((dice.body.position.y - player.body.position.y)/(dice.body.position.x - player.body.position.x)) + offset);
     }
 
     
