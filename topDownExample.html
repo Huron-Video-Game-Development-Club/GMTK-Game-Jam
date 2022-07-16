@@ -82,8 +82,12 @@
         overlay.style.height = dim.height + "px";
         overlay.style.width = dim.width + "px";
         //Arrow Keys to Move instruction
-        overlay.innerHTML += `<div id="instr_one" style="position: absolute; top: 200px; left: 300px;" class="pilled green">
+        overlay.innerHTML += `<div id="instr_one"><div style="position: absolute; top: 200px; left: 300px;" class="pilled green">
             <t style="padding: 0px;">Arrow Keys to Move</t>
+            </div>
+            <div style="position: absolute; top: 250px; left: 300px;" class="pilled green">
+            <t style="padding: 0px;">Space to Dash</t>
+            </div>
             </div>
             `
         overlay.innerHTML += `<div id="instr_two" style="position: absolute; display: none; top: 200px; left: 200px;" class="pilled green">
@@ -127,6 +131,7 @@
     var platforms;
     var dice;
     var daves = [];
+    var bobs = [];
     var slimes = [];
     var lavas = [];
     var stage = "tutorialPt1";
@@ -135,13 +140,17 @@
     var kickCount = 2;
     var arrow;
     var interactable = true;
+    var hoverableRollAnims = [];
+    var explosion;
+    var explodeAnim;
+    var freeOnes = [true, true, true, true, true, true, true, true, true, true];
 
 
     var isAlive = true;
 
     //helper method to load a spritesheet from Data URI
     function loadSheet(game, name, dataURI, width, height){
-        console.log("NEW");
+       // console.log("NEW");
         var img = new Image();
         img.onload = function(){
             game.textures.addSpriteSheet(name, img, {frameWidth: width, frameHeight: height});
@@ -175,6 +184,15 @@
     function resetDice() {
         dice.setScale(1);
         dice.detector.setScale(2.5);
+        if (dice.fiery){
+            try{
+                explosion.destroy();
+                clearInterval(explodeAnim);
+            }
+            catch{
+
+            }
+        }
         setTimeout(function(){
             for (slime of slimes) {
                 slime.destroy();
@@ -184,7 +202,7 @@
             }
             slimes = [];
             lavas = [];
-        }, 3000);
+        }, 1000);
         dice.fiery = false;
         clearInterval(dice.slimeAnim);
         clearInterval(dice.lavaAnim);
@@ -203,16 +221,16 @@
                 document.getElementById("instr_three-btn").style.display = "block";
                 break;
             case "one":
+                resetDice();
                 document.getElementById("instr_three").style.display = "none";
                 document.getElementById("instr_three-btn").style.display = "none";
                 player.setPosition(400, 600);
-                resetDice();
-                dice.setPosition(400, 400);
+                dice.setPosition(400, 100);
                 dice.setRotation(0);
-                dice.detector.setPosition(400, 400);
+                dice.detector.setPosition(400, 100);
                 dice.setVelocity(0, 0);
                 dice.setAngularVelocity(0);
-                createDave(game, 200, 200);
+                createBob(game, 400 ,300);
                 updateKickAndEnemyCounts(200, 1);
                 document.getElementById("gameData").style.display = "block";
                 break;
@@ -237,6 +255,148 @@
 
     function getSpeed(sprite){
         return Math.sqrt(sprite.body.velocity.x * sprite.body.velocity.x + sprite.body.velocity.y * sprite.body.velocity.y);
+    }
+
+    function addBullet(game, x, y, speed, trajectory){
+
+    }
+
+    function createBob(game, x, y, hp=2){
+        var bob = game.matter.add.sprite(x, y, "d1");
+        bob.setScale(2);
+        bob.hp = hp;
+        bob.setSensor(true);
+        bob.play("d1_run");
+        bob.body.name = "bob";
+        bob.chase = true;
+        bob.index = bobs.length;
+        bob.hoverIndex = -1;
+        bob.state =  "premove";
+        bob.roll = 0;
+        bob.flag = true;
+        bob.shootFlag = true;
+        var trajectory = 0;
+        bob.update = function(){
+            if (player.body.position.x >= bob.body.position.x){
+                bob.setFlipX(false);
+            }
+            else{
+                bob.setFlipX(true)
+            }
+            if (bob.state == "premove" && bob.flag){
+                bob.flag = false;
+                trajectory = getForceVector(bob.body.position, player.body.position, 1);
+                setTimeout(function(){
+                    bob.state = "move";
+                    bob.flag = true;
+                }, 500);
+            }
+            else if (bob.state == "move"){
+                bob.setVelocity(trajectory.x, trajectory.y);
+                if (bob.flag){
+                    setTimeout(function(){
+                        bob.state = "roll";
+                        bob.flag = true;
+                    }, 1000);
+                }   
+            }
+            else if (bob.state == "roll" && bob.flag){
+                bob.setVelocity(0, 0);
+                bob.flag = false;
+                bob.roll = Math.floor(Math.random() * 6) + 1;
+
+                if (bob.hoverIndex == -1){
+                    for (var y = 0; y < freeOnes.length; y++){
+                        if (freeOnes[y]){
+                            hoverableRollAnims[y].setPosition(bob.body.position.x, bob.body.position.y - 50);
+                            hoverableRollAnims[y].visible = true;
+                            freeOnes[y] = false;
+                            bob.hoverIndex = y;
+                            break;
+                        }
+                    }
+                }
+                else{
+                    hoverableRollAnims[bob.hoverIndex].setPosition(bob.body.position.x, bob.body.position.y - 50);
+                    hoverableRollAnims[bob.hoverIndex].visible = true;
+                }
+                
+                
+
+                
+                setTimeout(function(){
+                    if (bob.hoverIndex != -1){
+                        hoverableRollAnims[bob.hoverIndex].visible = false;
+                    }
+                    bob.state = "shoot";
+                    bob.flag = true;
+                }, 1000)
+                //play roll animation
+            }
+            else if (bob.state == "shoot" && bob.flag && bob.shootFlag){
+                bob.flag = false;
+                bob.play("d" + bob.roll + "_run");
+                console.log(bob.roll);
+                if (bob.shootFlag){
+                    for (var a = 0; a < bob.roll; a++){
+                        setTimeout(function(){
+                            var vec = getForceVector(bob.body.position, player.body.position, 1);
+                            createBullet(game, bob.body.position.x + vec.x * 5, bob.body.position.y + vec.y * 5, vec, 7)
+                        }, 200 * (a + 1));
+                    }
+                    bob.shootFlag = false;
+                }
+                
+                setTimeout(function(){
+                    bob.state = "premove";
+                    bob.flag = true;
+                    bob.shootFlag = true;
+                }, 1000);
+            }
+        }
+        bobs.push(bob);
+        bob.setOnCollideActive((data)=>{
+          //  console.log("collision");
+            if (wasInvolved(player, data)){
+                player.visible = false;
+                isAlive = false;
+            }
+            else if (wasInvolved(dice, data)){
+                
+                
+            }
+        });
+
+        bob.setOnCollideWith(dice, (data)=>{
+            let base = getForceVector(dice.body.position, bob.body.position, 1);
+            dice.setVelocity(-base.x * getSpeed(dice), -base.y * getSpeed(dice));
+            //dice.activate();
+            bob.hp -= 1;
+            var flashEff =  setInterval(function(){
+                if (flash){
+                    flash = false;
+                    bob.clearTint();
+                }
+                else{
+                    flash = true;
+                    bob.setTintFill(0xFFFFFF);
+                }
+            }, 200);
+            setTimeout(function(){
+                clearInterval(flashEff);
+                bob.clearTint();
+            }, 1000);
+            var flash = true;
+            if (bob.hp <= 0){
+                bob.destroy();
+                bobs[bob.index] = 0;
+                freeOnes[bob.hoverIndex] = true;
+                hoverableRollAnims[bob.hoverIndex].visible = false;
+                updateKickAndEnemyCounts(kickCount, enemyCount - 1);
+            }
+        })
+        return bob;
+
     }
 
     //creates a new dave enemy and appends it to daves
@@ -266,7 +426,7 @@
         }
         daves.push(dave);
         dave.setOnCollideActive((data)=>{
-            console.log("collision");
+            //console.log("collision");
             if (wasInvolved(player, data)){
                 player.visible = false;
                 isAlive = false;
@@ -275,7 +435,7 @@
                 daves[dave.index] = 0;
                 let base = getForceVector(dice.body.position, dave.body.position, 1);
                 dice.setVelocity(-base.x * getSpeed(dice), -base.y * getSpeed(dice));
-                dice.activate();
+               // dice.activate();
                 dave.destroy();
                 updateKickAndEnemyCounts(kickCount, enemyCount - 1);
             }
@@ -285,13 +445,13 @@
 
 
     function createExplosion(game, x, y) {
-        var explosion = game.matter.add.sprite(x, y, "dice");
+        explosion = game.matter.add.sprite(x, y, "dice");
         explosion.visible = false;
         explosion.setSensor(true);
         var explosionScale = 1;
         dice.setVelocity(dice.body.velocity.x * 4, dice.body.velocity.y * 4);
         dice.fiery = true;
-        var explodeAnim = setInterval(function(){
+        explodeAnim = setInterval(function(){
             explosionScale += 0.04;
             explosion.setScale(explosionScale)
         }, 20);
@@ -326,6 +486,25 @@
         });
 
         slimes.push(slime);
+    }
+
+    function createBullet(game, x, y, trajectory, speed){
+        var bullet = game.matter.add.sprite(x, y, "bullet");
+        bullet.setScale(2);
+        bullet.setSensor(true);
+        var b = Math.sqrt(trajectory.x * trajectory.x + trajectory.y * trajectory.y)
+        bullet.setVelocity(trajectory.x * speed / b, trajectory.y * speed/b);
+        bullet.setOnCollideWith(player, (data)=>{
+            player.visible = false;
+            isAlive = false;
+        });
+        var z = setTimeout(() => {
+            bullet.destroy();
+        }, 5000);
+        bullet.setOnCollideWith(dice, (data)=>{
+            clearTimeout(z);
+            bullet.destroy();
+        });
     }
 
     // Creates lava object when die collides with something
@@ -376,6 +555,32 @@
 
         let uri6 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAADFJREFUKFNjZCAAGJHlNxjE/AfxAy4sgYvDGTBJmAaYIrACdElkRYy4JGGKqKCAkDcB/2USujWLhUMAAAAASUVORK5CYII="
         this.textures.addBase64("arrow", uri6);
+
+        let d1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEQAAAAVCAYAAAD/wUjgAAAAAXNSR0IArs4c6QAAAVdJREFUWEftWNERgzAI1Wl0gi7RebtEJ9Bp2sPr61EMASXRqxe/PC+Qx+MJIX1X8BmG22uLu3l+9lvWe9dGcHwBRZwQULKfpocX87JuHO+dJOVsHAsh0WD22IM5TsoeP1F7iaPfA0I6uZKPRsgnu1BaI6QRkq77hymENqJH60AAUrsOeXFkfxmvk1ww/+ajOiHWwcSjkBKkenG0otqK6slF1SvV2kXVi+Nyv0yuo+VIKdp2rXmIF0W8AxyGuxIKgU8MiNTq+X5W6yf7IsOdBYSCRsCpCZfbl5iYeYLk8AcFcaL4xL0a/yWrACu/a3cZWuD8u1QHl7KW3QgOvp+VmJ8LGk8w1qWOFrj8JTxKkWusYCSxXG3yvGMqRMpMYzWX3VQt4UBkUfOoLIIjtZ+VmKRC4Eg7RVrZ9QauVX0NtBWM1VqRsBy+FSEaq9EgPWBlceY2KMy1cbwBr0ygNMzWL1UAAAAASUVORK5CYII=";
+        let d2 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEQAAAAVCAYAAAD/wUjgAAAAAXNSR0IArs4c6QAAAXFJREFUWEftWNsNwjAMpNOUCViCeVmCCco0oCCMrsauH3EpIPpVRYl9d3acOMOu8BvHwzVi7nI5D5H53rk9OJ6Aeow0oG39NJ28mO/z9vvjjouyNY67IL1kMutJORQlY6d3PccxZEBwI79ko1yQFrH2ebcPRbha1CyOmSBZI0jm222UCxKqqlBYq0XN4ijfMlkg1Vsmi+MvyEM5qmV/QbYWhBfdtU4Za8toOEIZUkHm0228XRAeuUyGVIiq4QgJUkFmbRuRSyFiKS2qVj+EEaV/AkPNXcWxSzapQWy3ZfSn3Z6xHypp7iwgjTQRljpcXO+98kvNIUZc8qcJhR33S/vPVSUnfFx7y9CI4zjPDk6E0p5nkzTuwYH+rMDMHmg8ZKxHHY043xKeTOFzLDJShmidOYotZgjWAT7ZG12pluApwgtqT3SXsoxwSP6swIgZoqlq7dslINZFKRJdDw7Nn/Qit5ghmqre6EaIR0FbZCp83wCAzLg03NfrIwAAAABJRU5ErkJggg==";
+        let d3 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEQAAAAVCAYAAAD/wUjgAAAAAXNSR0IArs4c6QAAAYpJREFUWEfdmOERgjAMhWEamMAlnNclnACm0St38R4hadI2RZFfnte+fnlNSsM4BD7TdHuVyK3rcywZ7x3bwvEBahFJoGn+sjy8zNu4eb4P3JRvc2yGtAZTM5+cQ1NqdFrnc46xBoKL/JNGuCFpx9LjLR/a4WhTazl2htSKYDBX1wg3pOhUhYM12tRajvCS4SBWxvQqmVqOrCERwVxNo7shVup6MiTCVC9H95KxUtdjiDeYkjcVN5k4igzRRCJAfkXjdEOkjEnX97MN0TiKQCKC6a1RcilElqqS0YKx+iEsNfpNWtTclWRIjoNYyBhcT7s9Yz8U0twRIHWqaWEEwZKQOlyc773yS80hGkUG8+ZPMgo77kP7z4OhRaQgpdNfAsEM4kZxDc3UFg7MRo2Pxuw+0HiCsT7qoIYEYu0sNw/Xs4KRMoSvp/GZhmiu8tqXdhjTHu8ZfKxmrmWqlWV4juCa0tuMl7CYIZqr3t31Bi6VHGZIC0dOO8d3MEQaLH3Ws0pHA/L8r613BscbUkzQNAuqwVYAAAAASUVORK5CYII=";
+        let d4 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEQAAAAVCAYAAAD/wUjgAAAAAXNSR0IArs4c6QAAAWdJREFUWEftWMENgzAMhGlggi7RebtEJ4BpWgXVlXHj2NiHUBG8Kpo45zvniNN3wGcYbq8t4eb52W8Z7x2bwfEFlAlSgJb50/TwYl7GjeO9k6QcjWMhJJtMZD4xx0mJxMnOlzj6CAgZ5Ewx4IQUxcqjbR/5PymMJjWKY0VINAhP5t9jwAnZ5KrMWNGkRnHAt0wUCHrLRHFchHyYIy+7CNmbEISpRssd4UNwU0UQcmQMOCFHqosw5tN5SOtQ2BILaqpWP8S3AP0mcNTcIdSlmNQgltMyX691eiYckObOAlIWo4RrHS6fj+iYuUCy+aMK4kTxjvun/ZesElj5XrvL0BLn72V18FLW1M3g4OtZwqwuaDzJWJc6WuJyS3gqRY6xkpHE8mqTTaRZIbLMNFZb6ta8hAORpuapsgyO2nqWMNUKoUBaa26p601cc30NtJWM55Nfu5Gregipq7GaTdIDVpozn0PGvDeONyPM6DT/LIOKAAAAAElFTkSuQmCC";
+        let d5 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEQAAAAVCAYAAAD/wUjgAAAAAXNSR0IArs4c6QAAAYNJREFUWEfdmNENgzAMRGEamKBLdN4u0QlgmlZBcmWOODbOVajtVwWJeT47TpxxIP6m6fY6Y25dn+OZ8dGxPRwfoB4jBbTMX5ZHlHkbN8/3AUW5mmMTpNeZzHxRTouSsdM7HznGDAQa+ScbdEFKxMrPWj74XiLMFjXLsRMka0Q78+s26IKcqqqqsLJFzXLQlwyCRDKm7DTsJZPlaIIwnPk1G18XxEvdSFFliBrloKdqBF7vQhFBos4w6hC9qDIEudIGXRAvmrVih0WVIUiWg75ksiCsXaZ1KGyxydKlCOL1Qzri8l/gpLljCCI2pUEsp2X9vdbpWTgozZ0HopdErcPV8xkdsw4QNn+SQVoo3XEf2n9UVWDxuXWXIZFGx/VzzA6dylZ0ezj09yw+GbO7oIk4413qWI7jkohkSkvUKIfVmbsZgmlmqdqKbq2W6HMGFrVIlvVw1L7nBaaaIZaq+LxWtWs3Xl400Y4F7TkT2eE8voMglqrR6EagvDEWtOeMZzfy/g31PQBDlNE1ZwAAAABJRU5ErkJggg==";
+        let d6 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEQAAAAVCAYAAAD/wUjgAAAAAXNSR0IArs4c6QAAAWRJREFUWEftWNERgzAI1Wl0gi7RebuEE+g07cUrPXwNAQGvV0+/PE3I4wEvIX2X+AzD7bnH3LJM/Z7x1rERHB9AESMFaJk/zw8r5nXcON47JOXXOFZCos545hNznBSPneh8xNF7QKCRM9lIJ6RErDxS+eB/inA2qV4cG0K8Rrgz/24jnZBdqsqENZtUL46rZN47I5VueoZcJbNMp8qyUzmToUNXyRytIV51z4huxlkmvWQyCInYaB0KW3aru4wXiNYP8Z2H3mktau4yoks2qUEsp2W+Xuv0TDhSmjsNSFmMHK51uHx+RsfMA4TNH2UQJ4p33F/tP7JKYPG7dJchOc6/Y3bwzJSiG8HB19MCs7mgsTijXepIjmNJWDIFx2jOILE827CJVDME00xitRXdmpZwIKhRliyL4KitpwWmmiHafYcWXavjkohLoDVnLJtC7UauqiEUXYnVqJMWsCjOfA4J89E4Xsa9GEM9XNSmAAAAAElFTkSuQmCC";
+        loadSheet(this, "d1", d1, 17, 21);
+        loadSheet(this, "d2", d2, 17, 21);
+        loadSheet(this, "d3", d3, 17, 21);
+        loadSheet(this, "d4", d4, 17, 21);
+        loadSheet(this, "d5", d5, 17, 21);
+        loadSheet(this, "d6", d6, 17, 21);
+
+        let roll = "data:image/png;base64,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"
+        loadSheet(this, "roll", roll, 48, 48);
+
+       // this.load.spritesheet("roll", "/diceRollAnim.png", {frameWidth: 48, frameHeight: 48});
+
+        let bullet = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAAXNSR0IArs4c6QAAACJJREFUKFNjXKWn+p8BD2AEKfASFcSqZNvr9wxDRwE+bwIApJMh6Z8kSoUAAAAASUVORK5CYII=";    
+        this.textures.addBase64("bullet", bullet);
+
+        let dungeon = "data:image/png;base64,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";
+        this.textures.addBase64("background", dungeon);
+
+
     }
 
 
@@ -403,8 +608,62 @@
             repeat: -1
         });
 
+        d1Run = this.anims.create({
+            key: 'd1_run',
+            frames: this.anims.generateFrameNumbers('d1', {start: 0, end: 3}),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        d6Run = this.anims.create({
+            key: 'd6_run',
+            frames: this.anims.generateFrameNumbers('d6', {start: 0, end: 3}),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        d2Run = this.anims.create({
+            key: 'd2_run',
+            frames: this.anims.generateFrameNumbers('d2', {start: 0, end: 3}),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        d3Run = this.anims.create({
+            key: 'd3_run',
+            frames: this.anims.generateFrameNumbers('d3', {start: 0, end: 3}),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        d4Run = this.anims.create({
+            key: 'd4_run',
+            frames: this.anims.generateFrameNumbers('d4', {start: 0, end: 3}),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        d5Run = this.anims.create({
+            key: 'd5_run',
+            frames: this.anims.generateFrameNumbers('d5', {start: 0, end: 3}),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        diceRoll = this.anims.create({
+            key: 'roll',
+            frames: this.anims.generateFrameNumbers('roll', {start: 0, end: 6}),
+            frameRate: 14,
+            repeat: -1
+        });
+
+
         //createDave(this, 200, 200);
 
+        background = this.matter.add.sprite(400, 400, 'background');
+        background.setScale(3.5);
+        background.setSensor(true);
+        background.alpha = 0.5;
 
         player = this.matter.add.sprite(400, 600, 'run');
         player.canDash = true;
@@ -419,7 +678,7 @@
         arrow.setScale(2);
         arrow.setSensor(true);
 
-        dice = this.matter.add.sprite(400, 400, "dice");
+        dice = this.matter.add.sprite(400, 100, "dice");
         dice.fiery = false;
         dice.rotateNum = 0;
         dice.colors = ['0x52ffb8', '0xe85f5c', '0x69385c', '0x006d77', '0xec9f05', '0xFBF2C0'];
@@ -438,6 +697,15 @@
         dice.detector.visible = false;
         dice.detector.setSensor(true);
 
+        for (var x = 0; x < 10; x++){
+            hoverableRollAnim = this.matter.add.sprite(0, 0, "roll");
+            hoverableRollAnim.play("roll", true);
+            hoverableRollAnim.setSensor(true);
+            hoverableRollAnim.visible = false;
+            hoverableRollAnims.push(hoverableRollAnim);
+        }
+
+        /*
         enmie = this.matter.add.sprite(300, 100, "dice");
         enmie.setScale(0.9, 0.9);
         enmie.setRotation(Math.PI/4);
@@ -449,7 +717,7 @@
         enmie.tintFill = true;
         enmie.clearTint();
         enmie.body.name = "dice";
-
+*/
 
         //create edges of playing area
         var rightEdge = this.matter.add.rectangle(800, 0, 100, 1600, {isStatic: true});
@@ -471,13 +739,13 @@
             }
             var self = this;
             if (keys.space.isDown && interactable && wasInvolved(player, data) && kickCount > 0){
-                console.log("HI!");
+               // console.log("HI!");
                 if (dice.num == 1) {
                     dice.slimeAnim = setInterval(function() {
                         createSlime(self, dice.body.position.x, dice.body.position.y);
                     }, 100);
                 } else if (dice.num == 2) {
-                    console.log("HI2!");
+                   // console.log("HI2!");
                     dice.lavaAnim = setInterval(function() { 
                         createLava(self, dice.body.position.x, dice.body.position.y);
                     }, 2000);
@@ -501,7 +769,7 @@
                 }
 
                 var newVelocity = getForceVector(player.body.position, dice.body.position, FORCE);
-                console.log(newVelocity);
+               // console.log(newVelocity);
                 dice.setVelocity(newVelocity.x, newVelocity.y);
 
                 dice.state = "action";
@@ -722,7 +990,13 @@
             }
         }
 
-        speed = Math.sqrt(Math.pow(enmie.body.velocity.x, 2) + Math.pow(enmie.body.velocity.y, 2))
+        for (bob of bobs){
+            if (bob != 0){
+                bob.update();
+            }
+        }
+
+       /* speed = Math.sqrt(Math.pow(enmie.body.velocity.x, 2) + Math.pow(enmie.body.velocity.y, 2))
 
         if (speed > 14.14)
         {
@@ -731,7 +1005,7 @@
         else if (speed < 7.05)
         {
             enmie.setVelocity(enmie.body.velocity.x * 1.1, enmie.body.velocity.y * 1.1)
-        }
+        }*/
 
         //enmie.body.setMaxSpeed(14.14);
 
@@ -743,7 +1017,7 @@
         }
         arrow.setRotation(Math.atan((dice.body.position.y - player.body.position.y)/(dice.body.position.x - player.body.position.x)) + offset);
     
-        enmie.setAngularVelocity(1);
+        //enmie.setAngularVelocity(1);
         
         if (dice.state == "selecting" && !dice.loadedState){
             dice.loadedState = true;
@@ -761,10 +1035,10 @@
                 dice.state = "selected";
                 dice.loadedState = false;
                 window.clearInterval(dice.selectionAnim);
-            }, 2000);
+            }, 1000);
         }
         else if (dice.state == "selecting"){
-            dice.setRotation(dice.rotation + 10);
+            dice.setRotation(dice.rotation + 5);
         }
         else if (dice.state == "selected" && !dice.loadedState){
             dice.setStatic(false);
