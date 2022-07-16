@@ -86,9 +86,27 @@
             </div>
             `
         overlay.innerHTML += `<div id="instr_two" style="position: absolute; display: none; top: 200px; left: 200px;" class="pilled green">
-            <t style="padding: 0px;">Spacebar when near the die to launch it</t>
+            <t style="padding: 0px;">Spacebar when near the die to kick it</t>
+            </div>
+
+        <div id="instr_three" style="position: absolute; display: none; top: 200px; left: 200px;" class="pilled green">
+            <t style="padding: 0px;">Use the power of the die to CRUSH THINE ENEMIES! Good luck...</t>
+            </div>
+        <div id="instr_three-btn" style="position: absolute; display: none; top: 400px; left: 200px; border-radius: 5px;" class="pilled green">
+            <t style="padding: 0px;">Hold Space to Start</t>
             </div>
             `
+        overlay.innerHTML += `
+            <div id="gameData" style="display: none;">
+                <div style="position: absolute; top: 30px; left: 10px; border-radius: 5px;" class="pilled green">
+                    <t style="padding: 0px;" id="kickCount">Kicks remaining: </t>
+                </div>
+                <div style="position: absolute; top: 70px; left: 10px; border-radius: 5px;" class="pilled green">
+                    <t style="padding: 0px;" id="enemyCount">Enemies remaining: </t>
+                </div>
+            </div>
+
+        `
         
        // overlay.style.backgroundColor ="blue";
     }
@@ -110,6 +128,8 @@
     var daves = [];
     var stage = "tutorialPt1";
     var stageCompleted = false;
+    var enemyCount = 1;
+    var kickCount = 2;
 
 
     var isAlive = true;
@@ -134,9 +154,17 @@
     function wasInvolved(sprite, data){
         return (data.bodyA.name == sprite.body.name || data.bodyB.name == sprite.body.name);
     }
+
+    //updates the kick and enemy counts and the UI based on the values given
+    function updateKickAndEnemyCounts(newKicks, newEnemies){
+        enemyCount = newEnemies;
+        kickCount = newKicks;
+        document.getElementById("enemyCount").innerHTML = "Enemies remaining: " + enemyCount;
+        document.getElementById("kickCount").innerHTML = "Kicks remaining: " + kickCount;  
+    }
         
     //loads the stage with the given name
-    function loadStage(name){
+    function loadStage(name, game){
         switch(name){
             case "tutorialPt2":
                 document.getElementById("instr_one").style.display = "none";
@@ -144,8 +172,33 @@
                 break;
             case "tutorialPt3":
                 document.getElementById("instr_two").style.display = "none";
+                document.getElementById("instr_three").style.display = "block";
+                document.getElementById("instr_three-btn").style.display = "block";
+                break;
+            case "one":
+                document.getElementById("instr_three").style.display = "none";
+                document.getElementById("instr_three-btn").style.display = "none";
+                player.setPosition(400, 600);
+                dice.setPosition(400, 400);
+                dice.setRotation(0);
+                dice.detector.setPosition(400, 400);
+                dice.setVelocity(0, 0);
+                dice.setAngularVelocity(0);
+                createDave(game, 200, 200);
+                updateKickAndEnemyCounts(2, 1);
+                document.getElementById("gameData").style.display = "block";
                 break;
         }
+    }
+
+    //transitions to given stage
+    function stageTransition(name, game=null){
+        stageCompleted = true;
+        window.setTimeout(function(){
+            stage = name;
+            stageCompleted = false;
+            loadStage(name, game);
+        }, 1500);
     }
 
     //creates a new dave enemy and appends it to daves
@@ -183,6 +236,7 @@
             else if (wasInvolved(dice, data)){
                 daves[dave.index] = 0;
                 dave.destroy();
+                updateKickAndEnemyCounts(kickCount, enemyCount - 1);
             }
         });
         return dave;
@@ -275,13 +329,11 @@
                 dice.setTintFill(0xECA72C);
                 interactable = false;
                 if (stage == "tutorialPt2" && !stageCompleted){
-                    stageCompleted = true;
-                    window.setTimeout(function(){
-                        stage = "tutorialPt3";
-                        stageCompleted = false;
-                        loadStage("tutorialPt3");
-                    })
+                    stageTransition("tutorialPt3", this);
                 }
+
+                updateKickAndEnemyCounts(kickCount - 1, enemyCount);
+                
             }
         });
 
@@ -327,14 +379,13 @@
             else{
                 player.play("run", true);
                 if (stage == "tutorialPt1" && !stageCompleted){
-                    console.log("HEY THERE");
-                    stageCompleted = true;
-                    window.setTimeout(function(){
-                        stage = "tutorialPt2";
-                        stageCompleted = false;
-                        loadStage("tutorialPt2");
-                    }, 1500);
+                    stageTransition("tutorialPt2", this);
                 }
+            }
+
+            if (keys.space.isDown && stage == "tutorialPt3" && !stageCompleted){
+                stageCompleted = true;
+                stageTransition("one", this);
             }
             
 
