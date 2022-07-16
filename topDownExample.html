@@ -283,7 +283,7 @@
     }
 
 
-    function createExplosion(game, x, y){
+    function createExplosion(game, x, y) {
         var explosion = game.matter.add.sprite(x, y, "dice");
         explosion.visible = false;
         explosion.setSensor(true);
@@ -464,20 +464,21 @@
             if (wasInvolved(player, data)){
                 player.canDash = false;
             }
-
+            var self = this;
             if (keys.space.isDown && interactable && wasInvolved(player, data) && kickCount > 0){
-                
+                console.log("HI!");
                 if (dice.num == 1) {
-                    dice.slimeAnim = setInterval(function(){
+                    dice.slimeAnim = setInterval(function() {
                         createSlime(self, dice.body.position.x, dice.body.position.y);
                     }, 100);
                 } else if (dice.num == 2) {
-                    dice.lavaAnim = setInterval(function(){
+                    console.log("HI2!");
+                    dice.lavaAnim = setInterval(function() { 
                         createLava(self, dice.body.position.x, dice.body.position.y);
                     }, 2000);
                 } else if (dice.num == 3) {
                     dice.rotateNum = 0;
-                    dice.flashAnim = setInterval(function(){
+                    dice.flashAnim = setInterval(function() {
                         if (dice.rotateNum == 0){
                             dice.rotateNum = 1;
                             dice.setTintFill("0xFFFFFF");
@@ -540,7 +541,7 @@
 
         var self = this;
         dice.activate = function(){
-            let num = Math.floor(Math.random() * 2) + 1;
+            let num = (Math.random() * 3) | 0 + 1;
             dice.num = num;
             dice.setTintFill(dice.colors[num - 1]);
             dice.loadedState = true;
