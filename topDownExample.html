@@ -117,7 +117,7 @@
     const FRICTION = 0.005; //0-1 where 0 is no friction
     const BOUNCE = 0.9; //0-1 where 1 means 100% of kinetic energy is retained on bounce by dice
     const FORCE = 10; //Initial force of dice kick
-    const SPEED = 3; //Player speed
+    var SPEED = 3; //Player speed
 
     //global variables for game objects and other stuff
     var player;
@@ -127,6 +127,7 @@
     var platforms;
     var dice;
     var daves = [];
+    var slimes = [];
     var stage = "tutorialPt1";
     var stageCompleted = false;
     var enemyCount = 1;
@@ -192,7 +193,7 @@
                 dice.setVelocity(0, 0);
                 dice.setAngularVelocity(0);
                 createDave(game, 200, 200);
-                updateKickAndEnemyCounts(2, 1);
+                updateKickAndEnemyCounts(200, 1);
                 document.getElementById("gameData").style.display = "block";
                 break;
         }
@@ -262,6 +263,25 @@
         return dave;
     }
 
+    function createSlime(game, x, y){
+        var slime = game.matter.add.sprite(x, y, "dice");
+        slime.visible = false;
+        slime.setSensor(true);
+        slime.setOnCollideActive((data)=>{
+            if (wasInvolved(player, data)){
+                var newVelocity = getForceVector({x: 0, y: 0}, player.body.position, 2);
+                player.inSlime = true;
+               // console.log("WE GOT EM");
+            }
+        });
+
+        slime.setOnCollideEnd((data)=>{
+            if (wasInvolved(player, data)){
+                player.inSlime = false;
+            }
+        })
+    }
+
     function preload(){
         
         let uri1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAYCAYAAAC8/X7cAAAAAXNSR0IArs4c6QAAARxJREFUWEftl8sNAjEMRHePNMKZUiiAPqiBPiiAUjjTCEdQkCKZ7Nozjs1nBVxxZvIyJDbjsPDPuPD9D18JcNrsbuVgt+cj3B8smEvIY+BNuGrXdQjCDeA18AC02gyEC6DH4GcAtMNBKdAJ9BowCSBtC4ICiBggAFZbe5UgQNTAAvBoaymYABkGGoDU3l8vj7LDao0Cm/QGFSDLwOoj9bsWAAHJ3jAL0J58xKAFYFINAWQb9ADA35EYMyYJMAAeA1mbpS1fpCeAVxj8AZS460V+awJlL9GU2+k0/Q6g8bceqBzJ56CqDhrdYR8oQhED1MgQcAoAMw6gjWjPKVrXBSBP3DJg66xeENWHd0Az6P1nxq5j6+A0yjStT9bcAc3f6Bk+Ifp6AAAAAElFTkSuQmCC";
@@ -327,7 +347,7 @@
 
         dice = this.matter.add.sprite(400, 400, "dice");
         dice.rotateNum = 0;
-        dice.colors = ['0x52ffb8', '0xe85f5c', '0x69385c', '0x006d77', '0xec9f05'];
+        dice.colors = ['0x52ffb8', '0xe85f5c', '0x69385c', '0x006d77', '0xec9f05', '0xFBF2C0'];
         dice.setRotation(Math.PI/4);
         dice.setMass(100000);
         dice.setFriction(0);
@@ -382,36 +402,39 @@
 
         var self = this;
         dice.activate = function(){
-            let num = Math.floor(Math.random() * 6) + 1;
-            dice.setTintFill(dice.colors[dice.num - 1]);
+            let num = 1//Math.floor(Math.random() * 6) + 1;
+            dice.setTintFill(dice.colors[num - 1]);
             dice.loadedState = true;
-            /*switch(num){
+            interactable = true;
+            switch(num){
                 case 1:
-                    
+                    dice.slimeAnim = setInterval(function(){
+                        createSlime(self, dice.body.position.x, dice.body.position.y);
+                    }, 100);
                     break;
                 case 2:
-                    dice.setTintFill(0xECA72C);
+                    
                     break;
                 case 3:
-                    dice.setTintFill(0xECA72C);
+                    
                     break;
                 case 4:
-                    dice.setTintFill(0xECA72C);
+                   
                     break;
                 case 5:
-                    dice.setTintFill(0xECA72C);
+                    dice.setScale(2.5);
+                    dice.detector.setScale(3.125);
                     break;
                 case 6:
-                    dice.setTintFill(0xECA72C);
                     break;
-            }*/
+            }
             var text = self.add.text(dice.body.position.x, dice.body.position.y, num);
             
             setTimeout(function(){
                 text.destroy();
             }, 2000);
         }
-        /*dice.setOnCollideWith(rightEdge, (data)=>{
+       /* dice.setOnCollideWith(rightEdge, (data)=>{
             if (!interactable){
                 dice.activate();
             }
@@ -442,6 +465,13 @@
 
         //player movement stuff
         if (isAlive){
+            if (player.inSlime){
+                SPEED = 1;
+            }
+            else{
+                SPEED = 3;
+            }
+
             if (keys.left.isDown){
                 player.setVelocityX(-SPEED);
                 player.setFlipX(false);
@@ -503,10 +533,21 @@
         
         
         //make dice usable when slow enough
+        function resetDice(){
+            dice.setScale(1);
+            dice.detector.setScale(2.5);
+            for (slime of slimes){
+                slime.destroy();
+            }
+            slimes = [];
+            clearInterval(dice.slimeAnim);
+        }
         if (speed < 1.5 && dice.state != "selecting" && dice.state != "selected"){
-            dice.selecting = true;
+            resetDice();
+            dice.state = "selecting";
             dice.loadedState = false;
-            interactable = true;
+            interactable = false;
+           
         } 
 
         for (dave of daves){
@@ -529,7 +570,7 @@
             //dice.setTintFill(dice.colors[dice.rotateNum]);
             dice.selectionAnim = window.setInterval(function(){
                 dice.rotateNum += 1;
-                if (dice.rotateNum > 4){
+                if (dice.rotateNum > 5){
                     dice.rotateNum = 0;
                 }
                 dice.setTintFill(dice.colors[dice.rotateNum]);
