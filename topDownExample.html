@@ -185,6 +185,7 @@
             slimes = [];
             lavas = [];
         }, 3000);
+        dice.fiery = false;
         clearInterval(dice.slimeAnim);
         clearInterval(dice.lavaAnim);
     }
@@ -288,13 +289,15 @@
         explosion.visible = false;
         explosion.setSensor(true);
         var explosionScale = 1;
+        dice.setVelocity(dice.body.velocity.x * 4, dice.body.velocity.y * 4);
+        dice.fiery = true;
         setInterval(function(){
-            explosionScale += 0.02;
+            explosionScale += 0.04;
             explosion.setScale(explosionScale)
         }, 20);
         setTimeout(function(){
             explosion.destroy();
-        }, 2000);
+        }, 1000);
         explosion.setOnCollideActive((data)=>{
             if (wasInvolved(player, data)){
                 player.visible = false;
@@ -416,6 +419,7 @@
         arrow.setSensor(true);
 
         dice = this.matter.add.sprite(400, 400, "dice");
+        dice.fiery = false;
         dice.rotateNum = 0;
         dice.colors = ['0x52ffb8', '0xe85f5c', '0x69385c', '0x006d77', '0xec9f05', '0xFBF2C0'];
         dice.setRotation(Math.PI/4);
@@ -488,7 +492,7 @@
                             dice.setTintFill("0xe85f5c");
                         }
                     }, 200);
-                    var self = this;
+                    
                     setTimeout(function(){
                         createExplosion(self, dice.body.position.x, dice.body.position.y);
                         clearInterval(dice.flashAnim);
@@ -518,6 +522,13 @@
                 player.canDash = true;
             }
         });
+
+        dice.setOnCollideWith(player, (data)=>{
+            if (dice.fiery){
+                player.visible = false;
+                isAlive = false;
+            }
+        }); 
 
         // enmie.detector.setOnCollideActive((data)=>{
         //     if (keys.space.isDown && interactable && wasInvolved(player, data) && kickCount > 0){
@@ -683,9 +694,13 @@
         let speed = Math.sqrt(Math.pow(dice.body.velocity.x, 2) + Math.pow(dice.body.velocity.y, 2))
             
         //max speed of 10
-        if (speed > 10){
+        if (speed > 10 && !dice.fiery){
             dice.setVelocityX((dice.body.velocity.x/speed) * 10);
             dice.setVelocityY((dice.body.velocity.y/speed) * 10);
+        }
+        else if (speed > 15){
+            dice.setVelocityX((dice.body.velocity.x/speed) * 15);
+            dice.setVelocityY((dice.body.velocity.y/speed) * 15);
         }
 
         dice.detector.setPosition(dice.body.position.x, dice.body.position.y);
@@ -754,6 +769,9 @@
             dice.setStatic(false);
             dice.loadedState = true;
             dice.activate();
+        }
+        else if (dice.state == "action" && dice.fiery){
+            dice.setTintFill("0xD6221F");
         }
 
     }
