@@ -170,6 +170,18 @@
         document.getElementById("enemyCount").innerHTML = "Enemies remaining: " + enemyCount;
         document.getElementById("kickCount").innerHTML = "Kicks remaining: " + kickCount;  
     }
+
+    function resetDice(){
+            dice.setScale(1);
+            dice.detector.setScale(2.5);
+            setTimeout(function(){
+                for (slime of slimes){
+                    slime.destroy();
+                }
+                slimes = [];
+            }, 3000);
+            clearInterval(dice.slimeAnim);
+        }
         
     //loads the stage with the given name
     function loadStage(name, game){
@@ -187,6 +199,7 @@
                 document.getElementById("instr_three").style.display = "none";
                 document.getElementById("instr_three-btn").style.display = "none";
                 player.setPosition(400, 600);
+                resetDice();
                 dice.setPosition(400, 400);
                 dice.setRotation(0);
                 dice.detector.setPosition(400, 400);
@@ -279,7 +292,9 @@
             if (wasInvolved(player, data)){
                 player.inSlime = false;
             }
-        })
+        });
+
+        slimes.push(slime);
     }
 
     function preload(){
@@ -392,6 +407,13 @@
         //player kick
         dice.detector.setOnCollideActive((data)=>{
             if (keys.space.isDown && interactable && wasInvolved(player, data) && kickCount > 0){
+                
+                if (dice.num == 1){
+                    dice.slimeAnim = setInterval(function(){
+                        createSlime(self, dice.body.position.x, dice.body.position.y);
+                    }, 100);
+                }
+
                 var newVelocity = getForceVector(player.body.position, dice.body.position, FORCE);
                 console.log(newVelocity);
                 dice.setVelocity(newVelocity.x, newVelocity.y);
@@ -433,14 +455,12 @@
         var self = this;
         dice.activate = function(){
             let num = 1//Math.floor(Math.random() * 6) + 1;
+            dice.num = num;
             dice.setTintFill(dice.colors[num - 1]);
             dice.loadedState = true;
             interactable = true;
             switch(num){
                 case 1:
-                    dice.slimeAnim = setInterval(function(){
-                        createSlime(self, dice.body.position.x, dice.body.position.y);
-                    }, 100);
                     break;
                 case 2:
                     
@@ -565,15 +585,6 @@
         
         
         //make dice usable when slow enough
-        function resetDice(){
-            dice.setScale(1);
-            dice.detector.setScale(2.5);
-            for (slime of slimes){
-                slime.destroy();
-            }
-            slimes = [];
-            clearInterval(dice.slimeAnim);
-        }
         if (speed < 1.5 && dice.state != "selecting" && dice.state != "selected"){
             resetDice();
             dice.state = "selecting";
