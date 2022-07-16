@@ -552,7 +552,7 @@
 
         var self = this;
         dice.activate = function(){
-            let num = (Math.random() * 3) | 0 + 1;
+            let num = Math.floor(Math.random() * 3) + 1;
             dice.num = num;
             dice.setTintFill(dice.colors[num - 1]);
             dice.loadedState = true;
