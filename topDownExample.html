@@ -363,6 +363,19 @@
         dice.detector.visible = false;
         dice.detector.setSensor(true);
 
+        enmie = this.matter.add.sprite(300, 100, "dice");
+        enmie.setScale(0.9, 0.9);
+        enmie.setRotation(Math.PI/4);
+        enmie.setMass(100000);
+        enmie.setAngularVelocity(2);
+        enmie.setFriction(0);
+        enmie.setBounce(1);
+        enmie.setVelocity(10,10)
+        enmie.tintFill = true;
+        enmie.clearTint();
+        enmie.body.name = "dice";
+
+
         //create edges of playing area
         var rightEdge = this.matter.add.rectangle(800, 0, 100, 1600, {isStatic: true});
         rightEdge.name = "rightWall";
@@ -397,6 +410,23 @@
             }
         });
 
+        // enmie.detector.setOnCollideActive((data)=>{
+        //     if (keys.space.isDown && interactable && wasInvolved(player, data) && kickCount > 0){
+        //         var newVelocity = getForceVector(player.body.position, enmie.body.position, FORCE);
+        //         console.log(newVelocity);
+        //         enmie.setVelocity(newVelocity.x, newVelocity.y);
+        //         console.log("DID IT");
+        //         enmie.setAngularVelocity(0.2);  
+        //         enmie.setTintFill(red);
+        //         interactable = false;
+        //         if (stage == "tutorialPt2" && !stageCompleted){
+        //             stageTransition("tutorialPt3", this);
+        //         }
+
+        //         updateKickAndEnemyCounts(kickCount - 1, enemyCount);
+                
+        //     }
+        // });
         dice.state = "selecting";
         dice.loadedState = false;
 
@@ -457,6 +487,8 @@
                 dice.activate();
             }
         });*/
+
+
 
 
     }
@@ -556,6 +588,19 @@
             }
         }
 
+        speed = Math.sqrt(Math.pow(enmie.body.velocity.x, 2) + Math.pow(enmie.body.velocity.y, 2))
+
+        if (speed > 14.14)
+        {
+            enmie.setVelocity(enmie.body.velocity.x / 1.1, enmie.body.velocity.y / 1.1)
+        }
+        else if (speed < 7.05)
+        {
+            enmie.setVelocity(enmie.body.velocity.x * 1.1, enmie.body.velocity.y * 1.1)
+        }
+
+        //enmie.body.setMaxSpeed(14.14);
+
         var newArrowPos = getForceVector(player.body.position, dice.body.position, 50);
         arrow.setPosition(player.body.position.x + newArrowPos.x, player.body.position.y + newArrowPos.y);
         let offset = -Math.PI/2;
@@ -563,6 +608,8 @@
             offset = Math.PI/2
         }
         arrow.setRotation(Math.atan((dice.body.position.y - player.body.position.y)/(dice.body.position.x - player.body.position.x)) + offset);
+    
+        enmie.setAngularVelocity(1);
         
         if (dice.state == "selecting" && !dice.loadedState){
             dice.loadedState = true;
