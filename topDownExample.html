@@ -1,10 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-   <script src="//cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cabin&family=Roboto:wght@500&display=swap" rel="stylesheet">
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <style>
+        *{
+            font-family: "Roboto", sans-serif;
+            font-size: 16px;
+        }
+
+        .green{
+            color: white;
+            background-color: #1E555C;
+        }
+
+        .pilled{
+            border-radius: 20px;
+            padding-left: 5px;
+            padding: 10px;
+            padding-right: 5px;
+        }
+    </style>
 </head>
 <body>
-
+    <div id="overlay"></div>
     <script>
     var width = 800;
 
@@ -46,7 +67,31 @@
         }
     };
 
+    //game and UI overlay
     var game = new Phaser.Game(config);
+    var overlay;
+    window.onload = function(){
+        var canvas = document.querySelector("canvas");
+        let dim = canvas.getBoundingClientRect()
+
+        var overlay = document.getElementById("overlay");
+        overlay.style.position = "absolute";
+        overlay.style.left = dim.x + "px";
+        overlay.style.top = dim.y + "px";
+        overlay.style.height = dim.height + "px";
+        overlay.style.width = dim.width + "px";
+        //Arrow Keys to Move instruction
+        overlay.innerHTML += `<div id="instr_one" style="position: absolute; top: 200px; left: 300px;" class="pilled green">
+            <t style="padding: 0px;">Arrow Keys to Move</t>
+            </div>
+            `
+        overlay.innerHTML += `<div id="instr_two" style="position: absolute; display: none; top: 200px; left: 200px;" class="pilled green">
+            <t style="padding: 0px;">Spacebar when near the die to launch it</t>
+            </div>
+            `
+        
+       // overlay.style.backgroundColor ="blue";
+    }
 
     //game constants
     //Experiment with these!
@@ -55,7 +100,7 @@
     const FORCE = 10; //Initial force of dice kick
     const SPEED = 3; //Player speed
 
-    //global variables for game objects
+    //global variables for game objects and other stuff
     var player;
     var keys;
     var idleAnim;
@@ -63,6 +108,8 @@
     var platforms;
     var dice;
     var daves = [];
+    var stage = "tutorialPt1";
+    var stageCompleted = false;
 
 
     var isAlive = true;
@@ -88,6 +135,18 @@
         return (data.bodyA.name == sprite.body.name || data.bodyB.name == sprite.body.name);
     }
         
+    //loads the stage with the given name
+    function loadStage(name){
+        switch(name){
+            case "tutorialPt2":
+                document.getElementById("instr_one").style.display = "none";
+                document.getElementById("instr_two").style.display = "block";
+                break;
+            case "tutorialPt3":
+                document.getElementById("instr_two").style.display = "none";
+                break;
+        }
+    }
 
     //creates a new dave enemy and appends it to daves
     function createDave(game, x, y){
@@ -173,10 +232,10 @@
             repeat: -1
         });
 
-        createDave(this, 200, 200);
+        //createDave(this, 200, 200);
 
 
-        player = this.matter.add.sprite(100, 100, 'run');
+        player = this.matter.add.sprite(400, 600, 'run');
         player.setScale(2);
         player.isMoving = {x: false, y: false};
         player.setFixedRotation();
@@ -192,6 +251,11 @@
         dice.tintFill = true;
         dice.clearTint();
         dice.body.name = "dice";
+        dice.detector = this.matter.add.sprite(400, 400, "dice");
+       // dice.detector.setRotation(Math.PI/4);
+        dice.detector.setScale(2.5);
+        dice.detector.visible = false;
+        dice.detector.setSensor(true);
 
         //create edges of playing area
         var rightEdge = this.matter.add.rectangle(800, 0, 100, 1600, {isStatic: true});
@@ -201,7 +265,7 @@
 
 
         //collision events
-        dice.setOnCollideActive((data)=>{
+        dice.detector.setOnCollideActive((data)=>{
             if (keys.space.isDown && interactable && wasInvolved(player, data)){
                 var newVelocity = getForceVector(player.body.position, dice.body.position, FORCE);
                 console.log(newVelocity);
@@ -210,6 +274,14 @@
                 dice.setAngularVelocity(0.2);
                 dice.setTintFill(0xECA72C);
                 interactable = false;
+                if (stage == "tutorialPt2" && !stageCompleted){
+                    stageCompleted = true;
+                    window.setTimeout(function(){
+                        stage = "tutorialPt3";
+                        stageCompleted = false;
+                        loadStage("tutorialPt3");
+                    })
+                }
             }
         });
 
@@ -254,7 +326,18 @@
             }
             else{
                 player.play("run", true);
+                if (stage == "tutorialPt1" && !stageCompleted){
+                    console.log("HEY THERE");
+                    stageCompleted = true;
+                    window.setTimeout(function(){
+                        stage = "tutorialPt2";
+                        stageCompleted = false;
+                        loadStage("tutorialPt2");
+                    }, 1500);
+                }
             }
+            
+
         // player.play("run");
         }
         
@@ -265,6 +348,9 @@
             dice.setVelocityX((dice.body.velocity.x/speed) * 10);
             dice.setVelocityY((dice.body.velocity.y/speed) * 10);
         }
+
+        dice.detector.setPosition(dice.body.position.x, dice.body.position.y);
+        
         
         //make dice usable when slow enough
         if (speed < 1.5){
@@ -279,6 +365,8 @@
         }
 
     }
+
+    
     </script>
 
 </body>
