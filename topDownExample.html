@@ -282,13 +282,34 @@
         return dave;
     }
 
+
+    function createExplosion(game, x, y){
+        var explosion = game.matter.add.sprite(x, y, "dice");
+        explosion.visible = false;
+        explosion.setSensor(true);
+        var explosionScale = 1;
+        setInterval(function(){
+            explosionScale += 0.02;
+            explosion.setScale(explosionScale)
+        }, 20);
+        setTimeout(function(){
+            explosion.destroy();
+        }, 2000);
+        explosion.setOnCollideActive((data)=>{
+            if (wasInvolved(player, data)){
+                player.visible = false;
+                isAlive = false;
+               // console.log("WE GOT EM");
+            }
+        });
+    }
+
     function createSlime(game, x, y){
         var slime = game.matter.add.sprite(x, y, "dice");
         slime.visible = false;
         slime.setSensor(true);
         slime.setOnCollideActive((data)=>{
             if (wasInvolved(player, data)){
-                var newVelocity = getForceVector({x: 0, y: 0}, player.body.position, 2);
                 player.inSlime = true;
                // console.log("WE GOT EM");
             }
@@ -454,6 +475,23 @@
                     dice.lavaAnim = setInterval(function(){
                         createLava(self, dice.body.position.x, dice.body.position.y);
                     }, 2000);
+                } else if (dice.num == 3) {
+                    dice.rotateNum = 0;
+                    dice.flashAnim = setInterval(function(){
+                        if (dice.rotateNum == 0){
+                            dice.rotateNum = 1;
+                            dice.setTintFill("0xFFFFFF");
+                        }
+                        else{
+                            dice.rotateNum =  0;
+                            dice.setTintFill("0xe85f5c");
+                        }
+                    }, 200);
+                    var self = this;
+                    setTimeout(function(){
+                        createExplosion(self, dice.body.position.x, dice.body.position.y);
+                        clearInterval(dice.flashAnim);
+                    }, 2000);
                 }
 
                 var newVelocity = getForceVector(player.body.position, dice.body.position, FORCE);
@@ -511,7 +549,6 @@
                 case 1:
                     break;
                 case 2:
-                    
                     break;
                 case 3:
                     
