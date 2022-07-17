@@ -370,6 +370,7 @@
                 dice.setAngularVelocity(0);
                 createBob(game, 300 ,300);
                 createBob(game, 600 ,300);
+                createDave(game, 200, 200);
                 updateKickAndEnemyCounts(200, 1);
                 document.getElementById("gameData").style.display = "block";
                 break;
@@ -486,15 +487,16 @@
                     catch(err){
                         console.log("caught");
                     }
-                    
-                    hoverableRollAnims[bob.hoverIndex].visible = true;
+                    if (hoverableRollAnims[bob.hoverIndex] != undefined){
+                        hoverableRollAnims[bob.hoverIndex].visible = true;
+                    }
                 }
                 
                 
 
                 
                 setTimeout(function(){
-                    if (bob.hoverIndex != -1){
+                    if (bob.hoverIndex != -1 && hoverableRollAnims[bob.hoverIndex] != undefined){
                         hoverableRollAnims[bob.hoverIndex].visible = false;
                     }
                     bob.state = "shoot";
@@ -511,6 +513,7 @@
                         setTimeout(function(){
                             try{
                                 var vec = getForceVector(bob.body.position, player.body.position, 1);
+                                console.log(vec);
                                 createBullet(game, bob.body.position.x + vec.x * 5, bob.body.position.y + vec.y * 5, vec, 7)
                             }
                             catch(err){
@@ -572,7 +575,10 @@
                 bob.destroy();
                 bobs[bob.index] = 0;
                 freeOnes[bob.hoverIndex] = true;
-                hoverableRollAnims[bob.hoverIndex].visible = false;
+                if (hoverableRollAnims[bob.hoverIndex] != undefined){
+                    hoverableRollAnims[bob.hoverIndex].visible = false;
+                }
+                
                 setTimeout(() => {
                     updateKickAndEnemyCounts(kickCount, enemyCount - 1);
                 }, 2000)
@@ -585,7 +591,7 @@
 
     //creates a new dave enemy and appends it to daves
     function createDave(game, x, y){
-        dave = game.matter.add.sprite(250, 250, "dave_idle");
+        dave = game.matter.add.sprite(x, y, "dave_idle");
         dave.setScale(2);
         dave.setSensor(true);
         dave.play("dave_idle");
