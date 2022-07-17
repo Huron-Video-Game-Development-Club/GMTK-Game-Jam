@@ -153,15 +153,20 @@
                     <t style="padding: 0px;">Hold Space to Start</t>
                 </div>
             </div>
+            
             <div id="level-display" style="display: none;">
                 <div class="pilled green">
-                    <t id="level-text" style="padding: 0px;">Level 1</t>
+                    <t id="level-text"style="padding: 0px;">Level 1</t>
                 </div>
             </div>
+
             <div id="death-display" style="display: none;">
-                <div class="pilled green">
-                    <t id="level-text" style="padding: 0px;">You Died!</t>
-                    <t id="level-text" style="padding: 0px;">Press Space to Play Again</t>
+                <div style="top: 15% !important" class="pilled green">
+                    <t style="padding: 0px;">You Died!</t>
+                </div>
+                
+                <div style="top: 25% !important;" class="pilled green">
+                    <t style="padding: 0px;">Press Space to Retry</t>
                 </div>
             </div>
             `
@@ -220,6 +225,14 @@
         img.src = dataURI;
     }
 
+    function showLevelPlacard(num){
+        document.getElementById("level-display").style.display = "block";
+        document.getElementById("level-text").innerHTML = "Level " + num;
+        setTimeout(function(){
+            document.getElementById("level-display").style.display = "none";
+        }, 2000);
+    }
+
     //gets the normalized vector from p1 to p2 times given magnitude
     function getForceVector(p1, p2, magnitude){
         let d = Math.sqrt((p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y));
@@ -264,6 +277,9 @@
         slimes = [];
         lavas = [];
         dice.fiery = false;
+        setTimeout(function(){
+            dice.fiery = false;
+        }, 500)
         clearInterval(dice.slimeAnim);
         clearInterval(dice.lavaAnim);
     }
@@ -338,13 +354,13 @@
                 dice.detector.setPosition(400, 100);
                 dice.setVelocity(0, 0);
                 dice.setAngularVelocity(0);
-                createBob(game, 200 ,300);
-                createBob(game, 700 ,300);
+                createBob(game, 300 ,300);
+                createBob(game, 600 ,300);
                 updateKickAndEnemyCounts(200, 2);
                 document.getElementById("gameData").style.display = "block";
                 break;
             case "three":
-                showLevelPlacard(2);
+                showLevelPlacard(3);
                 resetDiceHard()
                 player.setPosition(400, 600);
                 dice.setPosition(400, 100);
@@ -352,13 +368,11 @@
                 dice.detector.setPosition(400, 100);
                 dice.setVelocity(0, 0);
                 dice.setAngularVelocity(0);
-                createBob(game, 200 ,300);
-                createBob(game, 700 ,300);
-                createBob(game, 700 ,300);
-                var wall = game.matter.add.sprite(600, 600, "wall");
-                wall.setStatic(true);
-                updateKickAndEnemyCounts(200, 2);
+                createBob(game, 300 ,300);
+                createBob(game, 600 ,300);
+                updateKickAndEnemyCounts(200, 1);
                 document.getElementById("gameData").style.display = "block";
+                break;
         }
     }
 
@@ -366,9 +380,9 @@
     function stageTransition(name, game=null, delay=1500){
         stageCompleted = true;
         window.setTimeout(function(){
+            loadStage(name, game);
             stage = name;
             stageCompleted = false;
-            loadStage(name, game);
         }, delay);
     }
 
@@ -379,7 +393,13 @@
     }
 
     function getSpeed(sprite){
-        return Math.sqrt(sprite.body.velocity.x * sprite.body.velocity.x + sprite.body.velocity.y * sprite.body.velocity.y);
+        try{
+            return Math.sqrt(sprite.body.velocity.x * sprite.body.velocity.x + sprite.body.velocity.y * sprite.body.velocity.y);
+        }
+        catch(err){
+            console.log("caught");
+        }
+        
     }
 
     function addBullet(game, x, y, speed, trajectory){
@@ -390,6 +410,7 @@
         var bob = game.matter.add.sprite(x, y, "d1");
         bob.setScale(2);
         bob.hp = hp;
+        bob.body.name = "bob";
         bob.setSensor(true);
         bob.play("d1_run");
         bob.body.name = "bob";
@@ -402,11 +423,16 @@
         bob.shootFlag = true;
         var trajectory = 0;
         bob.update = function(){
-            if (player.body.position.x >= bob.body.position.x){
-                bob.setFlipX(false);
+            try{
+                if (player.body.position.x >= bob.body.position.x){
+                    bob.setFlipX(false);
+                }
+                else{
+                    bob.setFlipX(true)
+                }
             }
-            else{
-                bob.setFlipX(true)
+            catch(err){
+                console.log("caught");
             }
             if (bob.state == "premove" && bob.flag){
                 bob.flag = false;
@@ -417,7 +443,13 @@
                 }, 500);
             }
             else if (bob.state == "move"){
-                bob.setVelocity(trajectory.x, trajectory.y);
+                try{
+                    bob.setVelocity(trajectory.x, trajectory.y);
+                }
+                catch(err){
+                    console.log("caught");
+                }
+                
                 if (bob.flag){
                     setTimeout(function(){
                         bob.state = "roll";
@@ -433,7 +465,13 @@
                 if (bob.hoverIndex == -1){
                     for (var y = 0; y < freeOnes.length; y++){
                         if (freeOnes[y]){
-                            hoverableRollAnims[y].setPosition(bob.body.position.x, bob.body.position.y - 50);
+                            try{
+                                hoverableRollAnims[y].setPosition(bob.body.position.x, bob.body.position.y - 50);
+                            }
+                            catch(err){
+                                console.log("caught");
+                            }
+                            
                             hoverableRollAnims[y].visible = true;
                             freeOnes[y] = false;
                             bob.hoverIndex = y;
@@ -442,7 +480,13 @@
                     }
                 }
                 else{
-                    hoverableRollAnims[bob.hoverIndex].setPosition(bob.body.position.x, bob.body.position.y - 50);
+                    try{
+                        hoverableRollAnims[bob.hoverIndex].setPosition(bob.body.position.x, bob.body.position.y - 50);
+                    }
+                    catch(err){
+                        console.log("caught");
+                    }
+                    
                     hoverableRollAnims[bob.hoverIndex].visible = true;
                 }
                 
@@ -465,9 +509,14 @@
                 if (bob.shootFlag){
                     for (var a = 0; a < bob.roll; a++){
                         setTimeout(function(){
-                            if (bob == null) return;
-                            var vec = getForceVector(bob.body.position, player.body.position, 1);
-                            createBullet(game, bob.body.position.x + vec.x * 5, bob.body.position.y + vec.y * 5, vec, 7)
+                            try{
+                                var vec = getForceVector(bob.body.position, player.body.position, 1);
+                                createBullet(game, bob.body.position.x + vec.x * 5, bob.body.position.y + vec.y * 5, vec, 7)
+                            }
+                            catch(err){
+                                console.log("caught");
+                            }
+                            
                         }, 200 * (a + 1));
                     }
                     bob.shootFlag = false;
@@ -484,7 +533,7 @@
         bob.setOnCollideActive((data)=>{
           //  console.log("collision");
             if (wasInvolved(player, data)){
-             //   player.visible = false;
+                player.visible = false;
                 isAlive = false;
             }
             else if (wasInvolved(dice, data)){
@@ -495,7 +544,13 @@
 
         bob.setOnCollideWith(dice, (data)=>{
             let base = getForceVector(dice.body.position, bob.body.position, 1);
-            dice.setVelocity(-base.x * getSpeed(dice), -base.y * getSpeed(dice));
+            try{
+                dice.setVelocity(-base.x * getSpeed(dice), -base.y * getSpeed(dice));
+            }
+            catch(err){
+                console.log("caught");
+            }
+            
             //dice.activate();
             bob.hp -= 1;
             var flashEff =  setInterval(function(){
@@ -505,7 +560,7 @@
                 }
                 else{
                     flash = true;
-                    bob.setTintFill(0xFF0000);
+                    bob.setTintFill(0xC83E4D);
                 }
             }, 200);
             setTimeout(function(){
@@ -539,11 +594,16 @@
         dave.index = daves.length;
         dave.update = function(){
 
-            if (dave.body.position.x > 600 && dave.moveRight){
-                dave.moveRight = false;
+            try{
+                if (dave.body.position.x > 600 && dave.moveRight){
+                    dave.moveRight = false;
+                }
+                else if (dave.body.position.x < 100 && !dave.moveRight){
+                    dave.moveRight = true;
+                }
             }
-            else if (dave.body.position.x < 100 && !dave.moveRight){
-                dave.moveRight = true;
+            catch(err){
+                console.log('caught');
             }
             
             if (dave.moveRight){
@@ -556,14 +616,20 @@
         daves.push(dave);
         dave.setOnCollideActive((data) => {
             //console.log("collision");
-            if (wasInvolved(player, data)) {
-                //player.visible = false;
+            if (wasInvolved(player, data)){
+                player.visible = false;
                 isAlive = false;
             }
             else if (wasInvolved(dice, data)) {
                 daves[dave.index] = 0;
                 let base = getForceVector(dice.body.position, dave.body.position, 1);
-                dice.setVelocity(-base.x * getSpeed(dice), -base.y * getSpeed(dice));
+                try{
+                    dice.setVelocity(-base.x * getSpeed(dice), -base.y * getSpeed(dice));
+                }
+                catch(err){
+                    console.log("caught");
+                }
+                
                // dice.activate();
                 dave.destroy();
                 setTimeout(() => {
@@ -580,8 +646,14 @@
         explosion.visible = false;
         explosion.setSensor(true);
         var explosionScale = 1;
-        dice.setVelocity(dice.body.velocity.x * 4, dice.body.velocity.y * 4);
-        explosionFx.setPosition(dice.body.position.x, dice.body.position.y);
+        try{
+            dice.setVelocity(dice.body.velocity.x * 4, dice.body.velocity.y * 4);
+            explosionFx.setPosition(dice.body.position.x, dice.body.position.y);
+        }
+        catch(err){
+            console.log("caught")
+        }
+        
         explosionFx.visible = true;
         explosionFx.play("explosionFx");
         explosionFx.once('animationcomplete', (explosionFx)=>{
@@ -597,7 +669,7 @@
         }, 20);
         explosion.setOnCollideActive((data)=>{
             if (wasInvolved(player, data)){
-              //  player.visible = false;
+                player.visible = false;
                 isAlive = false;
                // console.log("WE GOT EM");
             }
@@ -630,10 +702,16 @@
         var bullet = game.matter.add.sprite(x, y, "bullet");
         bullet.setScale(2);
         bullet.setSensor(true);
-        var b = Math.sqrt(trajectory.x * trajectory.x + trajectory.y * trajectory.y)
-        bullet.setVelocity(trajectory.x * speed / b, trajectory.y * speed/b);
+        try{
+            var b = Math.sqrt(trajectory.x * trajectory.x + trajectory.y * trajectory.y)
+            bullet.setVelocity(trajectory.x * speed / b, trajectory.y * speed/b);   
+        }
+        catch(err){
+            console.log("caught");
+        }
+        
         bullet.setOnCollideWith(player, (data)=>{
-           // player.visible = false;
+            player.visible = false;
             isAlive = false;
         });
         var z = setTimeout(() => {
@@ -649,7 +727,7 @@
     function createLava(game, x, y) {
         var lava = game.matter.add.sprite(x, y, "lavaBlock");
         //lava.setTint(0xD62246);
-        lava.play("lavaBlock");
+        slimeLayer.add([lava]);
         
         // No visuals because no sprite yet
         // Delete in final version
@@ -674,9 +752,10 @@
 
     function preload(){
         
-        //let uri1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAYCAYAAAC8/X7cAAAAAXNSR0IArs4c6QAAARxJREFUWEftl8sNAjEMRHePNMKZUiiAPqiBPiiAUjjTCEdQkCKZ7Nozjs1nBVxxZvIyJDbjsPDPuPD9D18JcNrsbuVgt+cj3B8smEvIY+BNuGrXdQjCDeA18AC02gyEC6DH4GcAtMNBKdAJ9BowCSBtC4ICiBggAFZbe5UgQNTAAvBoaymYABkGGoDU3l8vj7LDao0Cm/QGFSDLwOoj9bsWAAHJ3jAL0J58xKAFYFINAWQb9ADA35EYMyYJMAAeA1mbpS1fpCeAVxj8AZS460V+awJlL9GU2+k0/Q6g8bceqBzJ56CqDhrdYR8oQhED1MgQcAoAMw6gjWjPKVrXBSBP3DJg66xeENWHd0Az6P1nxq5j6+A0yjStT9bcAc3f6Bk+Ifp6AAAAAElFTkSuQmCC";
-        let uri1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAG4AAAAcCAYAAACAsYoxAAAAAXNSR0IArs4c6QAAApNJREFUaEPtmj1OwzAUgF9K0g0VBtQeABWpOxeAU7ACEhQBEohLsBQBEhR15RpcgQ0kWBgBMfCzQhrkqIkc1078+9pAuqA2L3l+32c7sYkH1aeUBLxStrpqNFTiStoJaHGR4xr+QydBY5gRF709OHHnLSyR606qk6DBBIAIi6GWuJGIWDKvoexxnjisAjFhquQyZTj14kwLxISJmUtLnOp8ajLi/qo4U4ZG4hKo7LTH/m4izrRAlVEwiVy6DEsjTrdAHXFlyFWJ4wyzStxoeWFjqiwDTMzRbTTiZO8JlThZUuI4lqG1RTFvXea3OhCGYdKa0nQSWcy2NxZUGGZgHm5fyrZ5LO50sAs/L/fp76So5Hq9ftfqzolKgWT60i5KsMGQ1yGxGHLFEdB0A9jvIhCD6yP4erqF+cVlWF87TsN44rAKJOwnkcs1Q6viiKmTqx042LrIuM0T57pAWlwZcskytC6u1++SHu7RkFyIky3QhjjsXDIMheLY6VB2ukmS0ue7EidToC1xOrlcMuSKy3vQKLrRT1uBrDiXMOlcrhkKR1z0fAfg+wDDIdRanbH7lkgg70Emb8S5LhATJttJXDIULgd6/e47AMwCgK8wTUIUReB53thTKfuPVHqp4LJATJjsE6xLhtbWcWRUEWnJJwgC2N88j78WLQdcFogJ03TpocLQijg2YSKvXq/D3sZZobii+yZ7XKVATJgmuVQZ0uI+OAAbK+1m/LLIzeMrOfwpgNxYbTfjQzlxc9S52oti1QIxYebt0jB8uBglYlJfRW9esdtFonjZuKTB3E6iOvJG8bzOlOkkmteVPa2IIblOFMzUhgBQ+w7JH+5rkSQmzpkTk7ZJJqlsAVUcIoFKHCJsm6l+AfnkckplSLbYAAAAAElFTkSuQmCC";
-        loadSheet(this, 'idle', uri1, 27, 28);
+       // let uri1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAYCAYAAAC8/X7cAAAAAXNSR0IArs4c6QAAARxJREFUWEftl8sNAjEMRHePNMKZUiiAPqiBPiiAUjjTCEdQkCKZ7Nozjs1nBVxxZvIyJDbjsPDPuPD9D18JcNrsbuVgt+cj3B8smEvIY+BNuGrXdQjCDeA18AC02gyEC6DH4GcAtMNBKdAJ9BowCSBtC4ICiBggAFZbe5UgQNTAAvBoaymYABkGGoDU3l8vj7LDao0Cm/QGFSDLwOoj9bsWAAHJ3jAL0J58xKAFYFINAWQb9ADA35EYMyYJMAAeA1mbpS1fpCeAVxj8AZS460V+awJlL9GU2+k0/Q6g8bceqBzJ56CqDhrdYR8oQhED1MgQcAoAMw6gjWjPKVrXBSBP3DJg66xeENWHd0Az6P1nxq5j6+A0yjStT9bcAc3f6Bk+Ifp6AAAAAElFTkSuQmCC";
+        
+       let uri1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAG4AAAAcCAYAAACAsYoxAAAAAXNSR0IArs4c6QAAApNJREFUaEPtmj1OwzAUgF9K0g0VBtQeABWpOxeAU7ACEhQBEohLsBQBEhR15RpcgQ0kWBgBMfCzQhrkqIkc1078+9pAuqA2L3l+32c7sYkH1aeUBLxStrpqNFTiStoJaHGR4xr+QydBY5gRF709OHHnLSyR606qk6DBBIAIi6GWuJGIWDKvoexxnjisAjFhquQyZTj14kwLxISJmUtLnOp8ajLi/qo4U4ZG4hKo7LTH/m4izrRAlVEwiVy6DEsjTrdAHXFlyFWJ4wyzStxoeWFjqiwDTMzRbTTiZO8JlThZUuI4lqG1RTFvXea3OhCGYdKa0nQSWcy2NxZUGGZgHm5fyrZ5LO50sAs/L/fp76So5Hq9ftfqzolKgWT60i5KsMGQ1yGxGHLFEdB0A9jvIhCD6yP4erqF+cVlWF87TsN44rAKJOwnkcs1Q6viiKmTqx042LrIuM0T57pAWlwZcskytC6u1++SHu7RkFyIky3QhjjsXDIMheLY6VB2ukmS0ue7EidToC1xOrlcMuSKy3vQKLrRT1uBrDiXMOlcrhkKR1z0fAfg+wDDIdRanbH7lkgg70Emb8S5LhATJttJXDIULgd6/e47AMwCgK8wTUIUReB53thTKfuPVHqp4LJATJjsE6xLhtbWcWRUEWnJJwgC2N88j78WLQdcFogJ03TpocLQijg2YSKvXq/D3sZZobii+yZ7XKVATJgmuVQZ0uI+OAAbK+1m/LLIzeMrOfwpgNxYbTfjQzlxc9S52oti1QIxYebt0jB8uBglYlJfRW9esdtFonjZuKTB3E6iOvJG8bzOlOkkmteVPa2IIblOFMzUhgBQ+w7JH+5rkSQmzpkTk7ZJJqlsAVUcIoFKHCJsm6l+AfnkckplSLbYAAAAAElFTkSuQmCC";
+       loadSheet(this, 'idle', uri1, 27, 28);
 
         //let uri2 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAAAYCAYAAAAF6fiUAAAAAXNSR0IArs4c6QAAAb5JREFUaEPtmMFVxDAMRNkjjeyZUiiAPqhh+6AASuFMIxzhhff8njGRZsaSdhMIR+wdjefLiZ3T3fF30wRON61uFH99ePpchh7fXjbpD2Wm+J9aoFIAmR3Hm3b7fwWELfmXAVQGNGpXQNiafwlAdUD/UX8zAKzwM3dBJeBZ/zSA2QLMOwBpZ0BANSLvGqTt+acARAogAKx25FTE1piBwGpb/iGAaAEPgKI9uwuUGioARdvy7wLIKGAB6LWfP96/p13uz2jDSHeDPfg3AVQGNAYzAkBAmE7di/9VAJUBMV0ZBbAn/78AVAfE6MPnkPOZgtGPAGb0Ff9TAJQC/dws896JKKvG2mMuS7v3/wNARYFrAtij/wOAsZ3/5A5Y1hrtUu8EFNXuWVh1ojVG3fR3gHpEXOavLarpeGNrzZsdELrHeP57L1Yu8B7ABsQE3xbTjLG/GUNlftfXYAAzmt77zHtkedrUTRhtR8U80xVM1zEnMQQajSufUcYM2HVeFcBMJ48hLBoscBQwGp+FrKwTPoKsMzdLmFlExRzkD40rnpSmGHWpTxHe9vIuRcoiMueiDkTjmV6QFvwcjQSO8VgCX5sy1ChabDngAAAAAElFTkSuQmCC";
         let uri2 = "data:image/png;base64,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"
@@ -759,8 +838,8 @@
         let lavaBlock = "data:image/png;base64,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"
         loadSheet(this, "lavaBlock", lavaBlock, 72, 72);
 
-        let wallImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAABACAYAAAB7jnWuAAAAAXNSR0IArs4c6QAAAT1JREFUaIHtmDGOwjAQRT/Ip0BUFEhpgui4Aw0gIWqOl4ZsswiJC9CtliYFyHfgBFCgBDwObNBiD8X/nb9N5gs/TQZai/nyDEUZAOj1Ese0tvC8R/rv2XajTwaUegADAEmaVsZ2vYH0/lLTs9YWXq1WHYQ/v7vGxV/RcDDyPA/CJE2DBairpc4AAzAAA6gHMMC1RcaSrFXbCZGHC8BOyAAMwAAfF8BrxaHbsqxlAGA8WVTmdr3BcDByvGcq9vvGY/n3V+bVMuVDSnW7HVh7crxnevUbk7XUGVAPUPvLKGqAfj/R/39gNr2RucozZy31zv1Vnl0DHA5H55BcS71zXx/Cj2AAQLR7l34VIOa934sMeH2gVIx+UAV4dD+huQDIgGAg5nugXHsMxO4HZIDzABngPEAGOA+QAc4D6gxcAP8oINuLfXLDAAAAAElFTkSuQmCC";
-        this.textures.addBase64("wallThing", wallImg);
+        let marker = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAAAXNSR0IArs4c6QAAAX1JREFUeF7tnEEOwjAMBMkL+C8XxIX/8gIQEo5KReK1Qy/JcK3t0u16vc6h5XG5Pk+d3/l+K3bZi92WyeRtc9611PtF7xWJL96fiBSbGqD92+uxaoVrRpzKIAD6fu0A5LQBAIk6QYs5QNURLgK6XBgANV551aDlKCE+MCLNFBOp4rWYUQmjiFFMUQof5PkgWqyPEAxCpFPSUw/rYJDHoBy+82exaqhOen4u5J6QXUzEDZHGKIpUaYTBIG/Ms2r8RgiRVsc8DHIYNCZh82bjpNUWm5cDY0+GSIv44YNw0iJVcNIxoNAgdYphFFk1Yr31icYoqi2WgneBJBikMgiR7iOFk8ZJjwkmDOJMOscgVg11iuXwnT8LHwSDxliOBon4MeYxiiJVOHKNAYUGqVOMbZ4j11hvceSq4YWTVjVIw3O9KKaYyiCmGGfSQ/rALsYuliMQIo1I55hjWTAIBv2ZQfty0Y+7ReKPiFVrqnGGR/MreNFCkfgjYtWaapwB9AK7HrTDlU5L1QAAAABJRU5ErkJggg=="
+        this.textures.addBase64("marker", marker)
 
     }
 
@@ -901,10 +980,10 @@
         dice.clearTint();
         dice.elapsed = 0;
         dice.body.name = "dice";
-        dice.detector = this.matter.add.sprite(400, 400, "dice");
+        dice.detector = this.matter.add.sprite(400, 400, "marker");
         dice.detector.name = "detector";
         dice.detector.setScale(2.5);
-        dice.detector.visible = false;
+        //dice.detector.visible = false;
         dice.detector.setSensor(true);
         dice.symbol = this.matter.add.sprite(400, 400, "lavaSymbol");
         dice.symbol.setSensor(true);
@@ -960,12 +1039,23 @@
                // console.log("HI!");
                 if (dice.num == 1) {
                     dice.slimeAnim = setInterval(function() {
-                        createSlime(self, dice.body.position.x, dice.body.position.y);
+                        try{
+                            createSlime(self, dice.body.position.x, dice.body.position.y);
+                        }
+                        catch(err){
+                            console.log("caught");
+                        }
                     }, 200);
                 } else if (dice.num == 2) {
                    // console.log("HI2!");
                     dice.lavaAnim = setInterval(function() { 
-                        createLava(self, dice.body.position.x, dice.body.position.y);
+                        try{
+                            createLava(self, dice.body.position.x, dice.body.position.y);
+                        }
+                        catch(err){
+                            console.log("caught");
+                        }
+                        
                     }, 2000);
                 } else if (dice.num == 3) {
                     dice.rotateNum = 0;
@@ -981,7 +1071,12 @@
                     }, 200);
                     
                     setTimeout(function(){
-                        createExplosion(self, dice.body.position.x, dice.body.position.y);
+                        try{
+                            createExplosion(self, dice.body.position.x, dice.body.position.y);
+                        }
+                        catch(err){
+                            console.log("caught");
+                        }
                         clearInterval(dice.flashAnim);
                         dice.clearTint();
                     }, 2000);
@@ -989,9 +1084,13 @@
 
                 var newVelocity = getForceVector(player.body.position, dice.body.position, FORCE);
                // console.log(newVelocity);
-                if (newVelocity != undefined){
-                    dice.setVelocity(newVelocity.x, newVelocity.y);
+                try{
+                    dice.setVelocity(newVelocity.x, newVelocity.y);     
                 }
+                catch(err){
+                    console.log("caught");
+                }
+                
 
                 dice.state = "action";
                 dice.loadedState = false;
@@ -1066,7 +1165,13 @@
                 case 6:
                     break;
             }
-            var text = self.add.text(dice.body.position.x, dice.body.position.y, num);
+            try{
+                var text = self.add.text(dice.body.position.x, dice.body.position.y, num);
+            }
+            catch(err){
+                console.log("caught");
+            }
+           
             
             setTimeout(function(){
                 text.destroy();
@@ -1105,9 +1210,12 @@
 
         //player movement stuff
         if (isAlive) {
-            if (enemyCount <= 0 && kickCount >= 0){
+            if (enemyCount <= 0 && kickCount >= 0 && !stageCompleted){
                 if (stage == "one"){
-                    loadStage("two", this);
+                    stageTransition("two", this);
+                }
+                else if (stage == "two"){
+                    stageTransition("three", this);
                 }
             }
             if(player.inSlime) {
@@ -1116,28 +1224,39 @@
                 SPEED = 4;
             }
 
-            if(player.inLava) {
-                player.isAlive = false;
+            if (player.inLava) {
+                isAlive = false;
                 player.visible = false;
             }
 
             if(player.dashing) {
-                player.isMoving.x = true;
+                try{
+                    player.isMoving.x = true;
+                }
+                catch(err){
+                    console.log("caught");
+                }
             } else {
-                if (keys.left.isDown){
+                try{
+                    if (keys.left.isDown){
                     player.setVelocityX(-SPEED);
                     player.setFlipX(true);
                     player.isMoving.x = true;
+                    }
+                    else if (keys.right.isDown){
+                        player.setVelocityX(SPEED);
+                        player.setFlipX(false);
+                        player.isMoving.x = true;
+                    }
+                    else{
+                        player.isMoving.x = false;
+                        player.setVelocityX(0);
+                    }
                 }
-                else if (keys.right.isDown){
-                    player.setVelocityX(SPEED);
-                    player.setFlipX(false);
-                    player.isMoving.x = true;
+                catch(err){
+                    console.log("caught");
                 }
-                else{
-                    player.isMoving.x = false;
-                    player.setVelocityX(0);
-                }
+                
 
                 if (keys.up.isDown){
                     player.setVelocityY(-SPEED);
@@ -1154,17 +1273,21 @@
             }
 
             
-
-            if (!player.isMoving.x && !player.isMoving.y){
-                player.play('idle', true);
-                player.setVelocityX(0);
-                player.setVelocityY(0);
-            }
-            else{
-                player.play("run", true);
-                if (stage == "tutorialPt1" && !stageCompleted){
-                    stageTransition("tutorialPt2", this, 500);
+            try{
+                if (!player.isMoving.x && !player.isMoving.y){
+                    player.play('idle', true);
+                    player.setVelocityX(0);
+                    player.setVelocityY(0);
                 }
+                else{
+                    player.play("run", true);
+                    if (stage == "tutorialPt1" && !stageCompleted){
+                        stageTransition("tutorialPt2", this, 500);
+                    }
+                }
+            }
+            catch(err){
+                console.log("caught");
             }
 
             if (keys.space.isDown && stage == "tutorialPt3" && !stageCompleted){
@@ -1173,7 +1296,13 @@
             }
 
             if (Phaser.Input.Keyboard.JustDown(spacebar) && player.canDash){
-                player.setVelocity(player.body.velocity.x * 3, player.body.velocity.y * 3);
+                try{
+                    player.setVelocity(player.body.velocity.x * 3, player.body.velocity.y * 3);
+                }
+                catch(err){
+                    console.log(err);
+                }
+                
                 player.dashing = true;
                 player.canDash = false;
                 setTimeout(function(){
@@ -1187,29 +1316,56 @@
         // player.play("run");
         }
         else{
-            player.visible = false;
-            document.getElementById("death-display").style.display = true;
+           document.getElementById("death-display").style.display = "block";
             if (Phaser.Input.Keyboard.JustDown(spacebar)){
-                loadStage(stage, this);
                 player.visible = true;
                 isAlive = true;
+                for (bob of bobs){
+                    if (bob != 0){
+                        bob.destroy();
+                    }
+                }
+                bobs = [];
+                for (dave of daves){
+                    if (dave != 0){
+                        dave.destroy();
+                    }
+                }
+                daves = [];
+                document.getElementById("death-display").style.display = "none";
+                stageTransition(stage, this);
+
+                
             }
         }
         
-        let speed = Math.sqrt(Math.pow(dice.body.velocity.x, 2) + Math.pow(dice.body.velocity.y, 2))
+        let speed = 0;
+        try{
+            speed = Math.sqrt(Math.pow(dice.body.velocity.x, 2) + Math.pow(dice.body.velocity.y, 2))
+        }
+        catch(err){
+            console.log('caught');
+        }
+        
             
         //max speed of 10
-        if (speed > 10 && !dice.fiery){
+        try{
+            if (speed > 10 && !dice.fiery){
             dice.setVelocityX((dice.body.velocity.x/speed) * 10);
             dice.setVelocityY((dice.body.velocity.y/speed) * 10);
-        }
-        else if (speed > 15){
-            dice.setVelocityX((dice.body.velocity.x/speed) * 15);
-            dice.setVelocityY((dice.body.velocity.y/speed) * 15);
-        }
+            }
+            else if (speed > 15){
+                dice.setVelocityX((dice.body.velocity.x/speed) * 15);
+                dice.setVelocityY((dice.body.velocity.y/speed) * 15);
+            }
 
-        dice.detector.setPosition(dice.body.position.x, dice.body.position.y);
-        dice.symbol.setPosition(dice.body.position.x, dice.body.position.y)
+            dice.detector.setPosition(dice.body.position.x, dice.body.position.y);
+            dice.symbol.setPosition(dice.body.position.x, dice.body.position.y)
+        }
+        catch(err){
+            console.log("caught");
+        }
+        
         
         
         //make dice usable when slow enough
@@ -1247,12 +1403,18 @@
         //enmie.body.setMaxSpeed(14.14);
 
         var newArrowPos = getForceVector(player.body.position, dice.body.position, 50);
-        arrow.setPosition(player.body.position.x + newArrowPos.x, player.body.position.y + newArrowPos.y);
-        let offset = -Math.PI/2;
-        if (dice.body.position.x > player.body.position.x){
-            offset = Math.PI/2
+        try{
+            arrow.setPosition(player.body.position.x + newArrowPos.x, player.body.position.y + newArrowPos.y);
+            let offset = -Math.PI/2;
+            if (dice.body.position.x > player.body.position.x){
+                offset = Math.PI/2
+            }
+            arrow.setRotation(Math.atan((dice.body.position.y - player.body.position.y)/(dice.body.position.x - player.body.position.x)) + offset);
         }
-        arrow.setRotation(Math.atan((dice.body.position.y - player.body.position.y)/(dice.body.position.x - player.body.position.x)) + offset);
+        catch(err){
+            console.log("caught");
+        }
+       
     
         //enmie.setAngularVelocity(1);
         
@@ -1286,6 +1448,8 @@
         else if (dice.state == "action" && dice.fiery){
             dice.setTexture('fire');
         }
+
+        dice.detector.visible = interactable;
 
     }
 
