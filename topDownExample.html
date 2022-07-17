@@ -195,6 +195,7 @@
     var explodeAnim;
     var freeOnes = [true, true, true, true, true, true, true, true, true, true];
     var explosionFx;
+    var slimeLayer;
 
     var isAlive = true;
 
@@ -580,6 +581,7 @@
         });
 
         slimes.push(slime);
+        slimeLayer.add([slime]);
     }
 
     function createBullet(game, x, y, trajectory, speed){
@@ -803,6 +805,12 @@
         //createDave(this, 200, 200);
 
         background = this.matter.add.sprite(400, 400, 'background');
+        var backLayer = this.add.layer();
+        backLayer.add([background]);
+        backLayer.sendToBack();
+        slimeLayer = this.add.layer();
+        slimeLayer.sendToBack();
+        slimeLayer.moveUp();
         background.setScale(2.6);
         background.setSensor(true);
         background.alpha = 1;
