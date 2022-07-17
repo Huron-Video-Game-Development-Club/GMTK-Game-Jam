@@ -5,23 +5,52 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cabin&family=Roboto:wght@500&display=swap" rel="stylesheet">
     <script src="//cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
-   
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         *{
-            font-family: "Roboto", sans-serif;
-            font-size: 16px;
+            font-family: 'VT323', monospace;
+            font-size: 24px;
         }
 
-        .green{
+        .green {
             color: white;
-            background-color: #1E555C;
+            user-select: none;
+            background-color: #252222;
+            opacity: 0.8;
         }
 
-        .pilled{
-            border-radius: 20px;
-            padding-left: 5px;
+        .pilled {
+            /*border-radius: 20px;*/
             padding: 10px;
-            padding-right: 5px;
+            position: absolute;
+            transform: translate(-50%, -50%);
+            top: 50%;
+            left: 50%;
+            text-align: center;
+            width: auto;
+        }
+
+        .pilled-exact {
+            /*border-radius: 20px;*/
+            padding: 10px;
+            position: absolute;
+            top: 10px;
+            text-align: center;
+            width: auto;
+        }
+
+        #instr_one, #instr_two, #instr_three, #instr_three-btn, #gameData {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        p {
+            margin-block-start: 0.2em !important; 
+            margin-block-end: 0.2em !important
         }
     </style>
 </head>
@@ -71,46 +100,67 @@
     //game and UI overlay
     var game = new Phaser.Game(config);
     var overlay;
-    window.onload = function(){
+    window.onresize = function() {
+        var canvas = document.querySelector("canvas");
+        let dim = canvas.getBoundingClientRect()
+
+        dataXPos = (window.innerWidth - dim.width) / 2 + 10;
+        document.getElementById('gameData').innerHTML = `
+            <div style="left: ${dataXPos}px !important; padding-top: 0px !important; padding-bottom: 0px !important;" class="pilled-exact green" >
+                <p style="" id="kickCount">Kicks remaining: ${kickCount}</p>
+                <p style="" id="enemyCount">Enemies remaining: ${enemyCount}</p>
+            </div>
+        `
+    }
+    window.onload = function() {
         var canvas = document.querySelector("canvas");
         let dim = canvas.getBoundingClientRect()
 
         var overlay = document.getElementById("overlay");
         overlay.style.position = "absolute";
-        overlay.style.left = dim.x + "px";
-        overlay.style.top = dim.y + "px";
-        overlay.style.height = dim.height + "px";
-        overlay.style.width = dim.width + "px";
+        // overlay.style.left = dim.x + "px";
+        // overlay.style.top = dim.y + "px";
+        // overlay.style.height = dim.height + "px";
+        // overlay.style.width = dim.width + "px";
+        let dataXPos = (window.innerWidth - dim.width) / 2 + 10;
         //Arrow Keys to Move instruction
-        overlay.innerHTML += `<div id="instr_one"><div style="position: absolute; top: 200px; left: 300px;" class="pilled green">
-            <t style="padding: 0px;">Arrow Keys to Move</t>
-            </div>
-            <div style="position: absolute; top: 250px; left: 300px;" class="pilled green">
-            <t style="padding: 0px;">Space to Dash</t>
-            </div>
+        overlay.innerHTML += `
+            <div id="instr_one">
+                <div style="top: 15% !important" class="pilled green">
+                    <t style="padding: 0px;">Use Arrow Keys to Move</t>
+                </div>
+                
+                <div style="top: 25% !important;" class="pilled green">
+                    <t style="padding: 0px;">Press Space to Dash</t>
+                </div>
             </div>
             `
-        overlay.innerHTML += `<div id="instr_two" style="position: absolute; display: none; top: 200px; left: 200px;" class="pilled green">
-            <t style="padding: 0px;">Spacebar when near the die to kick it</t>
+        overlay.innerHTML += `
+            <div id="instr_two" style="position: absolute; display: none;">
+                <div style="top: 20% !important" class="pilled green">
+                    <t style="padding: 0px;">Spacebar when near the die to kick it</t>
+                </div>
             </div>
 
-        <div id="instr_three" style="position: absolute; display: none; top: 200px; left: 200px;" class="pilled green">
-            <t style="padding: 0px;">Use the power of the die to CRUSH THINE ENEMIES! Good luck...</t>
+            <div id="instr_three" style="position: absolute; display: none;">
+                <div style="top: 20% !important" class="pilled green">
+                    <t style="padding: 0px;">Use the power of the die to CRUSH THINE ENEMIES! Good luck...</t>
+                </div>
             </div>
-        <div id="instr_three-btn" style="position: absolute; display: none; top: 400px; left: 200px; border-radius: 5px;" class="pilled green">
-            <t style="padding: 0px;">Hold Space to Start</t>
+
+            <div id="instr_three-btn" style="display: none;">
+                <div class="pilled green">
+                    <t style="padding: 0px;">Hold Space to Start</t>
+                </div>
             </div>
             `
         overlay.innerHTML += `
             <div id="gameData" style="display: none;">
-                <div style="position: absolute; top: 30px; left: 10px; border-radius: 5px;" class="pilled green">
-                    <t style="padding: 0px;" id="kickCount">Kicks remaining: </t>
-                </div>
-                <div style="position: absolute; top: 70px; left: 10px; border-radius: 5px;" class="pilled green">
-                    <t style="padding: 0px;" id="enemyCount">Enemies remaining: </t>
+                <div style="left: ${dataXPos}px !important; padding-top: 0px !important; padding-bottom: 0px !important;" class="pilled-exact green" >
+                    <p style="" id="kickCount">Kicks remaining: </p>
+                    <p style="" id="enemyCount">Enemies remaining: </p>
                 </div>
             </div>
-
         `
         
        // overlay.style.backgroundColor ="blue";
@@ -121,7 +171,7 @@
     const FRICTION = 0.005; //0-1 where 0 is no friction
     const BOUNCE = 0.9; //0-1 where 1 means 100% of kinetic energy is retained on bounce by dice
     const FORCE = 10; //Initial force of dice kick
-    var SPEED = 3; //Player speed
+    var SPEED = 4; //Player speed
 
     //global variables for game objects and other stuff
     var player;
@@ -691,7 +741,7 @@
         background = this.matter.add.sprite(400, 400, 'background');
         background.setScale(2.6);
         background.setSensor(true);
-        background.alpha = 0.5;
+        background.alpha = 1;
 
         player = this.matter.add.sprite(400, 600, 'run');
         player.canDash = true;
@@ -918,9 +968,9 @@
                 }
             }
             if(player.inSlime) {
-                SPEED = 1;
+                SPEED = 2;
             } else {
-                SPEED = 3;
+                SPEED = 4;
             }
 
             if(player.inLava) {
