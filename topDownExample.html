@@ -4,7 +4,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cabin&family=Roboto:wght@500&display=swap" rel="stylesheet">
-    <script src="//cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -213,6 +213,8 @@
     var explosionFx;
     var slimeLayer;
 
+    var walls = [];
+
     var isAlive = true;
 
     //helper method to load a spritesheet from Data URI
@@ -253,7 +255,7 @@
         enemyCount = newEnemies;
         kickCount = newKicks;
         document.getElementById("enemyCount").innerHTML = "Enemies remaining: " + enemyCount;
-        document.getElementById("kickCount").innerHTML = "Kicks remaining: " + kickCount;  
+        document.getElementById("kickCount").innerHTML = "Defeat all the enemies!"; 
     }
 
     function resetDiceHard() {
@@ -368,22 +370,67 @@
                 dice.detector.setPosition(400, 100);
                 dice.setVelocity(0, 0);
                 dice.setAngularVelocity(0);
-                createBob(game, 300 ,300);
+                createDave(game, 300 ,300);
                 createBob(game, 600 ,300);
-                createDave(game, 200, 200);
-                updateKickAndEnemyCounts(200, 1);
+                var w1 = game.matter.add.sprite(500, 500, "wallBox");
+                w1.setStatic(true);
+                var w2 = game.matter.add.sprite(300, 500, "wallBox");
+                w2.setStatic(true);
+                var w3 = game.matter.add.sprite(100, 500, "wallBox");
+                w3.setStatic(true);
+                updateKickAndEnemyCounts(200, 2);
+                walls.push(w1);
+                walls.push(w2);
+                walls.push(w3);
                 document.getElementById("gameData").style.display = "block";
                 break;
+            case "four":
+                showLevelPlacard(4);
+                for (wall of walls){
+                    wall.destroy();
+                }
+                walls = [];
+                resetDiceHard()
+                player.setPosition(400, 600);
+                dice.setPosition(400, 100);
+                dice.setRotation(0);
+                dice.detector.setPosition(400, 100);
+                dice.setVelocity(0, 0);
+                dice.setAngularVelocity(0);
+                createDave(game, 300 ,400);
+                createBob(game, 600 ,300);
+                createBob(game, 600 ,500);
+                createBob(game, 300 ,500);
+                /*var s1 = game.matter.add.sprite(700, 700, "starBox");
+                s1.setScale(2);
+                s1.setStatic(true);
+                s1.setOnCollideWith(dice, (data)=>{
+                    dice.setVelocity(dice.body.velocity.x * 3, dice.body.velocity.y * 3);
+                })
+                var s2 = game.matter.add.sprite(100, 700, "starBox");
+                s2.setScale(2);
+                s2.setStatic(true);
+                s2.setOnCollideWith(dice, (data)=>{
+                    dice.setVelocity(dice.body.velocity.x * 3, dice.body.velocity.y * 3);
+                });*/
+                updateKickAndEnemyCounts(200, 4);
+                document.getElementById("gameData").style.display = "block";
         }
     }
 
     //transitions to given stage
-    function stageTransition(name, game=null, delay=1500){
+    function stageTransition(name, game=null, delay=1000, useBlack=false){
         stageCompleted = true;
+        if (useBlack){
+            document.getElementById("overlay").style.backgroundColor = "black";
+        }
         window.setTimeout(function(){
             loadStage(name, game);
             stage = name;
             stageCompleted = false;
+            if (useBlack){
+                document.getElementById("overlay").style.background = "";
+            }
         }, delay);
     }
 
@@ -424,6 +471,9 @@
         bob.shootFlag = true;
         var trajectory = 0;
         bob.update = function(){
+            if (bob == undefined || bob == 0){
+                return;
+            }
             try{
                 if (player.body.position.x >= bob.body.position.x){
                     bob.setFlipX(false);
@@ -439,6 +489,9 @@
                 bob.flag = false;
                 trajectory = getForceVector(bob.body.position, player.body.position, 1);
                 setTimeout(function(){
+                    if (bob == undefined || bob == 0){
+                        return;
+                    }
                     bob.state = "move";
                     bob.flag = true;
                 }, 500);
@@ -453,6 +506,9 @@
                 
                 if (bob.flag){
                     setTimeout(function(){
+                        if (bob == undefined || bob == 0){
+                            return;
+                        }
                         bob.state = "roll";
                         bob.flag = true;
                     }, 1000);
@@ -468,21 +524,25 @@
                         if (freeOnes[y]){
                             try{
                                 hoverableRollAnims[y].setPosition(bob.body.position.x, bob.body.position.y - 50);
+                                hoverableRollAnims[y].visible = true;
+                                freeOnes[y] = false;
+                                bob.hoverIndex = y;
                             }
                             catch(err){
                                 console.log("caught");
                             }
                             
-                            hoverableRollAnims[y].visible = true;
-                            freeOnes[y] = false;
-                            bob.hoverIndex = y;
+                            
                             break;
                         }
                     }
                 }
                 else{
                     try{
-                        hoverableRollAnims[bob.hoverIndex].setPosition(bob.body.position.x, bob.body.position.y - 50);
+                        if (bob != undefined && bob.body != undefined && bob.body.position != undefined){
+                            hoverableRollAnims[bob.hoverIndex].setPosition(bob.body.position.x, bob.body.position.y - 50);
+                        }
+
                     }
                     catch(err){
                         console.log("caught");
@@ -496,6 +556,9 @@
 
                 
                 setTimeout(function(){
+                    if (bob == undefined || bob == 0){
+                        return;
+                    }
                     if (bob.hoverIndex != -1 && hoverableRollAnims[bob.hoverIndex] != undefined){
                         hoverableRollAnims[bob.hoverIndex].visible = false;
                     }
@@ -511,6 +574,9 @@
                 if (bob.shootFlag){
                     for (var a = 0; a < bob.roll; a++){
                         setTimeout(function(){
+                            if (bob == undefined || bob.body == undefined || bob.body.position == undefined){
+                                return;
+                            }
                             try{
                                 var vec = getForceVector(bob.body.position, player.body.position, 1);
                                 console.log(vec);
@@ -526,6 +592,9 @@
                 }
                 
                 setTimeout(function(){
+                    if (bob == undefined){
+                        return;
+                    }
                     bob.state = "premove";
                     bob.flag = true;
                     bob.shootFlag = true;
@@ -534,6 +603,9 @@
         }
         
         bob.setOnCollideActive((data)=>{
+            if (bob == undefined){
+                return;
+            }
           //  console.log("collision");
             if (wasInvolved(player, data)){
                 player.visible = false;
@@ -546,6 +618,9 @@
         });
 
         bob.setOnCollideWith(dice, (data)=>{
+            if (bob == undefined){
+                return;
+            }
             let base = getForceVector(dice.body.position, bob.body.position, 1);
             try{
                 dice.setVelocity(-base.x * getSpeed(dice), -base.y * getSpeed(dice));
@@ -567,6 +642,9 @@
                 }
             }, 200);
             setTimeout(function(){
+                if (bob  == undefined){
+                    return;
+                }
                 clearInterval(flashEff);
                 bob.clearTint();
             }, 1000);
@@ -594,6 +672,7 @@
         dave = game.matter.add.sprite(x, y, "dave_idle");
         dave.setScale(2);
         dave.setSensor(true);
+        dave.hp = 3;
         dave.play("dave_idle");
         dave.body.name = "dave";
         dave.moveRight = true;
@@ -626,23 +705,51 @@
                 player.visible = false;
                 isAlive = false;
             }
-            else if (wasInvolved(dice, data)) {
+        });
+
+        dave.setOnCollideWith(dice, (data)=>{
+            
+            let base = getForceVector(dice.body.position, dave.body.position, 1);
+            try{
+                dice.setVelocity(-base.x * getSpeed(dice), -base.y * getSpeed(dice));
+            }
+            catch(err){
+                console.log("caught");
+            }
+            
+            // dice.activate();
+            dave.hp -= 1;
+            var flash = true;
+            var flashEff =  setInterval(function(){
+                if (flash){
+                    flash = false;
+                    if (dave != undefined && dave != 0){
+                        dave.clearTint();
+                    }
+                }
+                else{
+                    flash = true;
+                    if (dave != undefined && dave != 0){
+                        dave.setTintFill(0xC83E4D);
+                    }
+                }
+            }, 200);
+            setTimeout(function(){
+                clearInterval(flashEff);
+                if (dave != undefined && dave != 0){
+                    dave.clearTint();
+                }
+            }, 1000);
+
+            if (dave.hp <= 0){
                 daves[dave.index] = 0;
-                let base = getForceVector(dice.body.position, dave.body.position, 1);
-                try{
-                    dice.setVelocity(-base.x * getSpeed(dice), -base.y * getSpeed(dice));
-                }
-                catch(err){
-                    console.log("caught");
-                }
-                
-               // dice.activate();
+                clearInterval(flashEff);
                 dave.destroy();
                 setTimeout(() => {
                     updateKickAndEnemyCounts(kickCount, enemyCount - 1);
                 }, 2000);
             }
-        });
+        })
         return dave;
     }
 
@@ -688,6 +795,9 @@
         //slime.visible = false;
         slime.setSensor(true);
         slime.setOnCollideActive((data)=>{
+            if (slime == undefined){
+                return;
+            }
             if (wasInvolved(player, data)){
                 player.inSlime = true;
                // console.log("WE GOT EM");
@@ -695,6 +805,9 @@
         });
 
         slime.setOnCollideEnd((data)=>{
+            if (slime == undefined){
+                return;
+            }
             if (wasInvolved(player, data)){
                 player.inSlime = false;
             }
@@ -721,10 +834,14 @@
             isAlive = false;
         });
         var z = setTimeout(() => {
+            if (bullet == undefined){
+                return;
+            }
             bullet.destroy();
         }, 5000);
         bullet.setOnCollideWith(dice, (data)=>{
             clearTimeout(z);
+            if (bullet == undefined){return;}
             bullet.destroy();
         });
     }
@@ -846,6 +963,12 @@
 
         let marker = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAAAXNSR0IArs4c6QAAAX1JREFUeF7tnEEOwjAMBMkL+C8XxIX/8gIQEo5KReK1Qy/JcK3t0u16vc6h5XG5Pk+d3/l+K3bZi92WyeRtc9611PtF7xWJL96fiBSbGqD92+uxaoVrRpzKIAD6fu0A5LQBAIk6QYs5QNURLgK6XBgANV551aDlKCE+MCLNFBOp4rWYUQmjiFFMUQof5PkgWqyPEAxCpFPSUw/rYJDHoBy+82exaqhOen4u5J6QXUzEDZHGKIpUaYTBIG/Ms2r8RgiRVsc8DHIYNCZh82bjpNUWm5cDY0+GSIv44YNw0iJVcNIxoNAgdYphFFk1Yr31icYoqi2WgneBJBikMgiR7iOFk8ZJjwkmDOJMOscgVg11iuXwnT8LHwSDxliOBon4MeYxiiJVOHKNAYUGqVOMbZ4j11hvceSq4YWTVjVIw3O9KKaYyiCmGGfSQ/rALsYuliMQIo1I55hjWTAIBv2ZQfty0Y+7ReKPiFVrqnGGR/MreNFCkfgjYtWaapwB9AK7HrTDlU5L1QAAAABJRU5ErkJggg=="
         this.textures.addBase64("marker", marker)
+
+        let wallBox = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAABACAYAAAB7jnWuAAAAAXNSR0IArs4c6QAAAT1JREFUaIHtmDGOwjAQRT/Ip0BUFEhpgui4Aw0gIWqOl4ZsswiJC9CtliYFyHfgBFCgBDwObNBiD8X/nb9N5gs/TQZai/nyDEUZAOj1Ese0tvC8R/rv2XajTwaUegADAEmaVsZ2vYH0/lLTs9YWXq1WHYQ/v7vGxV/RcDDyPA/CJE2DBairpc4AAzAAA6gHMMC1RcaSrFXbCZGHC8BOyAAMwAAfF8BrxaHbsqxlAGA8WVTmdr3BcDByvGcq9vvGY/n3V+bVMuVDSnW7HVh7crxnevUbk7XUGVAPUPvLKGqAfj/R/39gNr2RucozZy31zv1Vnl0DHA5H55BcS71zXx/Cj2AAQLR7l34VIOa934sMeH2gVIx+UAV4dD+huQDIgGAg5nugXHsMxO4HZIDzABngPEAGOA+QAc4D6gxcAP8oINuLfXLDAAAAAElFTkSuQmCC"
+        this.textures.addBase64("wallBox", wallBox);
+
+        let starBox = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAACjklEQVR4nO2aMW7bMBSGfxYZjK714Ct4yBE89AoZhQDZcoBMPUUP0C1A0NGX6NLdQ4DORZHBRrcgmzK4tBmKVCjpvce4+T8ggGxLov3hf0+UQoAQQgghhBBCCCGEvCdc1dFn87Zov6dtte9pP3Ao5fOX9D7bXy9fb9bHbWNZdoN5MTkpQFdMCi/LSJSNoNm8nSwmZrM2kaQ7wGupGSMmxCBNeoL6UjNVTIximnQEWcrxKEmSFzRBTnt7B+we4ZoVsFgOH1tB0gfJk/WilRxlZBOUS0+BHJ8ez1tJkVyCJsjJ8nA//Jjzi/IZegG6JVYoJ04PALTff2h8o8HICEqlR6rnVE7RmcRJxnJIzi7z+b8UuSb6YExvGomOoJ70tLd3+41QzKePx/dSxwTl5prVMVUGoqZ3+7i8EnJeSAnxYjwZQTlcs9pv5EQJXNHs5kHCcg4op0hWUKa03NVl981QyAg5h/QoY5Ygd3Pd/VG7x2lyDHqQ7VVssYRrxs9xBon5+2fUGDFyCSqd9yyW3f7zhrFr0gHu6nKwpBrpASoJGo3hBNFTRVDq3uvVYyrdm8kIErrvcs2q//Jdcl8mWF6A1POg2bzF+UXRrrn0xD2m/foteXzvc6JQzu+fIs+Fqt6sAtGEL/jh7uYaQEbUw71ZPzLtQdmnhv4vgRd1OIfvRXG5CZeWRyZBT1uHzbq4zIbOhHvTBHTlCJUXIPlMekAfEuckBAF1JCnKAaR70L7URE85CGE5wKnNpGOUGnOI3r+etUtNubQ8uosXNCSlUqMkB7Ba/iIlKpUa4ESXv4RMTZNxakLsl+CViso1YIPUhNRdxBnK6rsieSnAf7yIM8UJLAMmhBBCCCGEEEIIIe+LZ8+8HjOXYLDtAAAAAElFTkSuQmCC"
+        this.textures.addBase64("starBox", starBox);
 
     }
 
@@ -1218,10 +1341,13 @@
         if (isAlive) {
             if (enemyCount <= 0 && kickCount >= 0 && !stageCompleted){
                 if (stage == "one"){
-                    stageTransition("two", this);
+                    stageTransition("two", this, 1000, true);
                 }
                 else if (stage == "two"){
-                    stageTransition("three", this);
+                    stageTransition("three", this, 10000, true);
+                }
+                else if (stage == "three"){
+                    stageTransition("four", this, 1000, true);
                 }
             }
             if(player.inSlime) {
@@ -1298,7 +1424,7 @@
 
             if (keys.space.isDown && stage == "tutorialPt3" && !stageCompleted){
                 stageCompleted = true;
-                stageTransition("one", this);
+                stageTransition("one", this, 1000, true);
             }
 
             if (Phaser.Input.Keyboard.JustDown(spacebar) && player.canDash){
@@ -1339,7 +1465,7 @@
                 }
                 daves = [];
                 document.getElementById("death-display").style.display = "none";
-                stageTransition(stage, this);
+                stageTransition(stage, this, 1000, true);
 
                 
             }
